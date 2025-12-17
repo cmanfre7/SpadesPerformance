@@ -149,7 +149,7 @@ function useDraggableScroll() {
   const lastXRef = useRef(0);
   const lastTimeRef = useRef(0);
   const velocityRef = useRef(0);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number>(undefined);
   const [isDragging, setIsDragging] = useState(false);
 
   // Track velocity over last few frames for accuracy
