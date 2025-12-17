@@ -90,3 +90,31 @@ body {
 .status-canceled {
   @apply bg-red-500/20 text-red-400 border border-red-500/30;
 }
+
+/* Film strip scroll animation */
+@keyframes scroll-slow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-slow {
+  animation: scroll-slow 60s linear infinite;
+}
+
+.animate-scroll-slow:hover {
+  animation-play-state: paused;
+}
+
+/* Amber streetlight glow effect */
+.nav-link-glow {
+  transition: all 0.3s ease;
+}
+
+.nav-link-glow:hover {
+  color: #fcd34d;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.5), 0 0 30px rgba(251, 191, 36, 0.3);
+}

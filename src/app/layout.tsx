@@ -15,16 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spades Performance | Denver Performance Culture. Organized.",
-  description:
-    "Denver's premier car enthusiast community. Exclusive meets, verified members, and the Colorado performance culture done right.",
-  keywords: [
-    "Denver car club",
-    "Colorado car meets",
-    "performance cars Denver",
-    "car enthusiasts Colorado",
-    "Spades Performance",
-  ],
+  title: "Spades Performance",
+  description: "Denver.",
 };
 
 export default function RootLayout({
