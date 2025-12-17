@@ -1,38 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import Script from "next/script";
 
 export default function MediaPage() {
   useEffect(() => {
-    // Initialize iframe resizer after script loads
-    const initResizer = () => {
-      if (typeof window !== 'undefined' && (window as any).iFrameResize) {
-        const iframe = document.getElementById('elfsight-iframe');
-        if (iframe) {
-          (window as any).iFrameResize(iframe);
-        }
-      }
-    };
-
-    // Check if already loaded
-    if ((window as any).iFrameResize) {
-      initResizer();
+    // Load Elfsight script
+    if (typeof window !== 'undefined' && !document.getElementById('elfsight-platform-script')) {
+      const script = document.createElement('script');
+      script.id = 'elfsight-platform-script';
+      script.src = 'https://static.elfsight.com/platform/platform.js';
+      script.async = true;
+      document.body.appendChild(script);
     }
   }, []);
 
   return (
     <div className="min-h-screen pt-24">
-      <Script 
-        src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.2.10/iframeResizer.min.js"
-        onLoad={() => {
-          const iframe = document.getElementById('elfsight-iframe');
-          if (iframe && (window as any).iFrameResize) {
-            (window as any).iFrameResize(iframe);
-          }
-        }}
-      />
-      
       {/* Header */}
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto text-center">
@@ -51,14 +34,12 @@ export default function MediaPage() {
         </div>
       </section>
 
-      {/* Instagram Feed - Elfsight iframe */}
+      {/* Instagram Feed - Direct Elfsight Embed */}
       <section className="px-4 pb-12">
         <div className="max-w-7xl mx-auto">
-          <iframe 
-            id="elfsight-iframe"
-            src="https://b221f54f117e4bb1a34e9d493ca8450e.elf.site" 
-            style={{ border: 'none', width: '100%', minHeight: '800px' }}
-            title="Instagram Feed"
+          <div 
+            className="elfsight-app-b221f54f-117e-4bb1-a34e-9d493ca8450e" 
+            data-elfsight-app-lazy
           />
         </div>
       </section>
