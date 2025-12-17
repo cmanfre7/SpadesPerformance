@@ -660,3 +660,22 @@ body {
   animation: spark-5 11s ease-out infinite;
   animation-delay: -3s;
 }
+
+/* Fix dropdown/select styling for dark theme */
+select {
+  background-color: #1a1a1a !important;
+  color: white !important;
+}
+
+select option {
+  background-color: #1a1a1a !important;
+  color: white !important;
+  padding: 8px 12px;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: #d4af37 !important;
+  color: black !important;
+}

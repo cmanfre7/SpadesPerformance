@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const ADMIN_PASSWORD = 'spadesco2025';
-
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -21,14 +19,24 @@ export default function AdminLoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem('spades_admin_auth', 'true');
-      setIsAuthenticated(true);
-      router.push('/admin/dashboard');
-    } else {
-      setError('Wrong password');
-      setPassword('');
-    }
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        if (!res.ok) {
+          throw new Error('Wrong password');
+        }
+        sessionStorage.setItem('spades_admin_auth', 'true');
+        setIsAuthenticated(true);
+        router.push('/admin/dashboard');
+      } catch (err) {
+        setError('Wrong password');
+        setPassword('');
+      }
+    })();
   };
 
   return (

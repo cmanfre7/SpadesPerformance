@@ -4,64 +4,55 @@ import Link from "next/link";
 import Image from "next/image";
 import { SpadeIcon } from "@/components/ui/spade-icon";
 import { useEffect, useState, useRef, useCallback } from "react";
+import { adminStore } from "@/lib/admin-store";
 
-// Collage images with varying widths, heights, and vertical offsets for organic feel
-// type: "image" or "video"
-const collageImages = [
-  { id: 1, ext: "jpg", type: "image", width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]" },
-  { id: 2, ext: "jpg", type: "image", width: "w-28 md:w-36", height: "h-[90%]", offset: "mt-[5%]" },
-  { id: 3, ext: "jpg", type: "image", width: "w-40 md:w-52", height: "h-[75%]", offset: "mt-[12%]" },
-  // ROLL VIDEO 1
-  { id: "RollM1", ext: "mp4", type: "video", width: "w-36 md:w-48", height: "h-[90%]", offset: "mt-[5%]" },
-  { id: 20, ext: "JPEG", type: "image", width: "w-32 md:w-44", height: "h-[95%]", offset: "mt-[2%]" },
-  { id: 4, ext: "jpg", type: "image", width: "w-28 md:w-36", height: "h-[68%]", offset: "mt-[18%]" },
-  { id: 5, ext: "jpg", type: "image", width: "w-36 md:w-48", height: "h-[82%]", offset: "mt-[10%]" },
-  { id: 21, ext: "JPEG", type: "image", width: "w-30 md:w-40", height: "h-[72%]", offset: "mt-[14%]" },
-  // FLAME VIDEO
-  { id: "ATSV Flame shot", ext: "mov", type: "video", width: "w-40 md:w-52", height: "h-[88%]", offset: "mt-[6%]" },
-  { id: 6, ext: "jpg", type: "image", width: "w-32 md:w-44", height: "h-[88%]", offset: "mt-[6%]" },
-  // TEAM SHOT - Big center piece
-  { id: 19, ext: "JPEG", type: "image", width: "w-72 md:w-[400px]", height: "h-[92%]", offset: "mt-[4%]" },
-  { id: 7, ext: "jpg", type: "image", width: "w-28 md:w-36", height: "h-[78%]", offset: "mt-[11%]" },
-  // ROLL VIDEO 2
-  { id: "RollM2", ext: "mp4", type: "video", width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]" },
-  { id: 22, ext: "JPEG", type: "image", width: "w-40 md:w-52", height: "h-[92%]", offset: "mt-[4%]" },
-  { id: 8, ext: "jpg", type: "image", width: "w-32 md:w-40", height: "h-[65%]", offset: "mt-[20%]" },
-  { id: 9, ext: "jpg", type: "image", width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]" },
-  { id: 23, ext: "JPG", type: "image", width: "w-28 md:w-36", height: "h-[75%]", offset: "mt-[13%]" },
-  { id: 10, ext: "jpg", type: "image", width: "w-32 md:w-44", height: "h-[90%]", offset: "mt-[5%]" },
-  // ROLL VIDEO 3
-  { id: "Mroll3", ext: "mp4", type: "video", width: "w-36 md:w-48", height: "h-[82%]", offset: "mt-[9%]" },
-  { id: 11, ext: "jpg", type: "image", width: "w-30 md:w-40", height: "h-[70%]", offset: "mt-[16%]" },
-  { id: 24, ext: "JPG", type: "image", width: "w-36 md:w-48", height: "h-[88%]", offset: "mt-[6%]" },
-  // ROLL VIDEO 4
-  { id: "Mroll4", ext: "mp4", type: "video", width: "w-32 md:w-44", height: "h-[78%]", offset: "mt-[11%]" },
-  { id: 12, ext: "jpg", type: "image", width: "w-28 md:w-36", height: "h-[80%]", offset: "mt-[10%]" },
-  { id: 13, ext: "jpg", type: "image", width: "w-40 md:w-52", height: "h-[73%]", offset: "mt-[14%]" },
-  { id: 14, ext: "jpg", type: "image", width: "w-32 md:w-40", height: "h-[95%]", offset: "mt-[2%]" },
-  { id: 15, ext: "jpg", type: "image", width: "w-36 md:w-48", height: "h-[68%]", offset: "mt-[18%]" },
-  { id: 16, ext: "jpg", type: "image", width: "w-28 md:w-36", height: "h-[85%]", offset: "mt-[8%]" },
-  { id: 17, ext: "jpg", type: "image", width: "w-32 md:w-44", height: "h-[78%]", offset: "mt-[12%]" },
-  { id: 18, ext: "jpg", type: "image", width: "w-36 md:w-48", height: "h-[90%]", offset: "mt-[5%]" },
+// Default collage images (fallback if no admin-managed items)
+const defaultCollageImages = [
+  { id: "1", ext: "jpg", type: "image" as const, width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]", filename: "/images/collage/1.jpg" },
+  { id: "2", ext: "jpg", type: "image" as const, width: "w-28 md:w-36", height: "h-[90%]", offset: "mt-[5%]", filename: "/images/collage/2.jpg" },
+  { id: "3", ext: "jpg", type: "image" as const, width: "w-40 md:w-52", height: "h-[75%]", offset: "mt-[12%]", filename: "/images/collage/3.jpg" },
+  { id: "RollM1", ext: "mp4", type: "video" as const, width: "w-36 md:w-48", height: "h-[90%]", offset: "mt-[5%]", filename: "/images/collage/RollM1.mp4" },
+  { id: "20", ext: "JPEG", type: "image" as const, width: "w-32 md:w-44", height: "h-[95%]", offset: "mt-[2%]", filename: "/images/collage/20.JPEG" },
+  { id: "4", ext: "jpg", type: "image" as const, width: "w-28 md:w-36", height: "h-[68%]", offset: "mt-[18%]", filename: "/images/collage/4.jpg" },
+  { id: "5", ext: "jpg", type: "image" as const, width: "w-36 md:w-48", height: "h-[82%]", offset: "mt-[10%]", filename: "/images/collage/5.jpg" },
+  { id: "21", ext: "JPEG", type: "image" as const, width: "w-30 md:w-40", height: "h-[72%]", offset: "mt-[14%]", filename: "/images/collage/21.JPEG" },
+  { id: "flame", ext: "mov", type: "video" as const, width: "w-40 md:w-52", height: "h-[88%]", offset: "mt-[6%]", filename: "/images/collage/ATSV Flame shot.mov" },
+  { id: "6", ext: "jpg", type: "image" as const, width: "w-32 md:w-44", height: "h-[88%]", offset: "mt-[6%]", filename: "/images/collage/6.jpg" },
+  { id: "19", ext: "JPEG", type: "image" as const, width: "w-72 md:w-[400px]", height: "h-[92%]", offset: "mt-[4%]", filename: "/images/collage/19.JPEG" },
+  { id: "7", ext: "jpg", type: "image" as const, width: "w-28 md:w-36", height: "h-[78%]", offset: "mt-[11%]", filename: "/images/collage/7.jpg" },
+  { id: "RollM2", ext: "mp4", type: "video" as const, width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]", filename: "/images/collage/RollM2.mp4" },
+  { id: "22", ext: "JPEG", type: "image" as const, width: "w-40 md:w-52", height: "h-[92%]", offset: "mt-[4%]", filename: "/images/collage/22.JPEG" },
+  { id: "8", ext: "jpg", type: "image" as const, width: "w-32 md:w-40", height: "h-[65%]", offset: "mt-[20%]", filename: "/images/collage/8.jpg" },
+  { id: "9", ext: "jpg", type: "image" as const, width: "w-36 md:w-48", height: "h-[85%]", offset: "mt-[8%]", filename: "/images/collage/9.jpg" },
+  { id: "23", ext: "JPG", type: "image" as const, width: "w-28 md:w-36", height: "h-[75%]", offset: "mt-[13%]", filename: "/images/collage/23.JPG" },
+  { id: "10", ext: "jpg", type: "image" as const, width: "w-32 md:w-44", height: "h-[90%]", offset: "mt-[5%]", filename: "/images/collage/10.jpg" },
+  { id: "Mroll3", ext: "mp4", type: "video" as const, width: "w-36 md:w-48", height: "h-[82%]", offset: "mt-[9%]", filename: "/images/collage/Mroll3.mp4" },
+  { id: "11", ext: "jpg", type: "image" as const, width: "w-30 md:w-40", height: "h-[70%]", offset: "mt-[16%]", filename: "/images/collage/11.jpg" },
+  { id: "24", ext: "JPG", type: "image" as const, width: "w-36 md:w-48", height: "h-[88%]", offset: "mt-[6%]", filename: "/images/collage/24.JPG" },
+  { id: "Mroll4", ext: "mp4", type: "video" as const, width: "w-32 md:w-44", height: "h-[78%]", offset: "mt-[11%]", filename: "/images/collage/Mroll4.mp4" },
+  { id: "12", ext: "jpg", type: "image" as const, width: "w-28 md:w-36", height: "h-[80%]", offset: "mt-[10%]", filename: "/images/collage/12.jpg" },
+  { id: "13", ext: "jpg", type: "image" as const, width: "w-40 md:w-52", height: "h-[73%]", offset: "mt-[14%]", filename: "/images/collage/13.jpg" },
+  { id: "14", ext: "jpg", type: "image" as const, width: "w-32 md:w-40", height: "h-[95%]", offset: "mt-[2%]", filename: "/images/collage/14.jpg" },
+  { id: "15", ext: "jpg", type: "image" as const, width: "w-36 md:w-48", height: "h-[68%]", offset: "mt-[18%]", filename: "/images/collage/15.jpg" },
+  { id: "16", ext: "jpg", type: "image" as const, width: "w-28 md:w-36", height: "h-[85%]", offset: "mt-[8%]", filename: "/images/collage/16.jpg" },
+  { id: "17", ext: "jpg", type: "image" as const, width: "w-32 md:w-44", height: "h-[78%]", offset: "mt-[12%]", filename: "/images/collage/17.jpg" },
+  { id: "18", ext: "jpg", type: "image" as const, width: "w-36 md:w-48", height: "h-[90%]", offset: "mt-[5%]", filename: "/images/collage/18.jpg" },
 ];
 
-const recentEvents = [
-  { id: 1, date: "12.21.25", type: "NIGHT MEET", location: "DENVER", status: "PRIVATE" },
-  { id: 2, date: "12.22.25", type: "PRIVATE", location: "TBA", status: "INVITE ONLY" },
+// Default events (fallback)
+const defaultEvents = [
+  { id: "1", date: "12.21.25", type: "NIGHT MEET", location: "DENVER", status: "PRIVATE" },
+  { id: "2", date: "12.22.25", type: "PRIVATE", location: "TBA", status: "INVITE ONLY" },
 ];
 
-// Stats data
-const stats = [
-  { label: "MEMBERS", value: 130, suffix: "+" },
-  { label: "EVENTS", value: 47, suffix: "" },
-  { label: "BUILDS", value: 70, suffix: "+" },
-];
+// Default stats
+const defaultStats = { members: 130, events: 47, builds: 70 };
 
-// Featured builds
-const featuredBuilds = [
-  { id: 1, name: "800HP Supra", owner: "@turbo_mike", image: 1 },
-  { id: 2, name: "Twin Turbo 370Z", owner: "@z_nation", image: 4 },
-  { id: 3, name: "Built STI", owner: "@subie_sean", image: 7 },
+// Default featured builds
+const defaultFeaturedBuilds = [
+  { id: "1", name: "800HP Supra", owner: "@turbo_mike", image: "/images/collage/1.jpg" },
+  { id: "2", name: "Twin Turbo 370Z", owner: "@z_nation", image: "/images/collage/4.jpg" },
+  { id: "3", name: "Built STI", owner: "@subie_sean", image: "/images/collage/7.jpg" },
 ];
 
 // Animated counter hook
@@ -286,8 +277,84 @@ function useDraggableScroll() {
 }
 
 export default function Home() {
-  // Next event date (Dec 21, 2025)
-  const nextEventDate = new Date('2025-12-21T20:00:00');
+  // Load data from admin store (with fallbacks)
+  const [collageImages, setCollageImages] = useState(defaultCollageImages);
+  const [siteContent, setSiteContent] = useState({ 
+    heroTitle: "SPADES PERFORMANCE", 
+    heroTagline: "Colorado's Fastest.",
+    memberCount: "130+",
+    eventCount: "47",
+    buildCount: "70+",
+    joinTagline: "Know someone on the team? Get them to vouch for you.",
+    featuredBuilds: defaultFeaturedBuilds,
+  });
+  const [events, setEvents] = useState(defaultEvents);
+
+  useEffect(() => {
+    // Load admin-managed collage items
+    const adminCollage = adminStore.getCollage();
+    if (adminCollage && adminCollage.length > 0) {
+      const visibleItems = adminCollage
+        .filter(item => item.visible)
+        .sort((a, b) => a.displayOrder - b.displayOrder)
+        .map(item => ({
+          id: item.id,
+          ext: item.ext,
+          type: item.type,
+          width: item.width,
+          height: item.height,
+          offset: item.offset,
+          filename: item.filename, // This is now a full URL or path
+        }));
+      if (visibleItems.length > 0) {
+        setCollageImages(visibleItems);
+      }
+    }
+
+    // Load site content
+    const content = adminStore.getSiteContent();
+    if (content) {
+      setSiteContent({
+        heroTitle: content.heroTitle || "SPADES PERFORMANCE",
+        heroTagline: content.heroTagline || "Colorado's Fastest.",
+        memberCount: content.memberCount || "130+",
+        eventCount: content.eventCount || "47",
+        buildCount: content.buildCount || "70+",
+        joinTagline: content.joinTagline || "Know someone on the team? Get them to vouch for you.",
+        featuredBuilds: content.featuredBuilds?.length > 0 
+          ? content.featuredBuilds.map(b => ({
+              ...b,
+              image: b.image.startsWith('http') ? b.image : `/images/collage/${b.image}.jpg`
+            }))
+          : defaultFeaturedBuilds,
+      });
+    }
+
+    // Load events
+    const adminEvents = adminStore.getEvents();
+    if (adminEvents && adminEvents.length > 0) {
+      const upcomingEvents = adminEvents
+        .filter(e => e.published && !e.isPast)
+        .slice(0, 2)
+        .map(e => ({
+          id: e.id,
+          date: e.date,
+          type: e.type,
+          location: e.location,
+          status: e.access,
+        }));
+      if (upcomingEvents.length > 0) {
+        setEvents(upcomingEvents);
+      }
+    }
+  }, []);
+
+  // Get next upcoming event from admin store
+  const nextEvent = events.length > 0 ? events[0] : null;
+  const nextEventDate = nextEvent ? (() => {
+    const [month, day, year] = nextEvent.date.split('.');
+    return new Date(`20${year}-${month}-${day}T20:00:00`);
+  })() : new Date('2025-12-21T20:00:00');
   
   // Draggable scroll for collage
   const { ref: collageRef, isDragging, handlers } = useDraggableScroll();
@@ -353,7 +420,7 @@ export default function Home() {
                 fontWeight: 900,
               }}
             >
-              SPADES PERFORMANCE
+              {siteContent.heroTitle}
             </h1>
             {/* Gradient underline - fades from right to left */}
             <div 
@@ -366,7 +433,7 @@ export default function Home() {
  
           {/* Tagline - simple, understated */}
           <p className="text-white/50 text-sm md:text-base tracking-[0.2em] mt-6 italic">
-            Colorado's Fastest.
+            {siteContent.heroTagline}
           </p>
 
           {/* CTA Buttons */}
@@ -400,9 +467,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-spades-black via-spades-dark to-spades-black" />
         <div className="max-w-5xl mx-auto relative z-10">
           <div className="grid grid-cols-3 gap-8">
-            {stats.map((stat) => (
-              <StatCounter key={stat.label} {...stat} />
-            ))}
+            <StatCounter label="MEMBERS" value={parseInt(siteContent.memberCount) || 130} suffix={siteContent.memberCount.includes('+') ? '+' : ''} />
+            <StatCounter label="EVENTS" value={parseInt(siteContent.eventCount) || 47} suffix={siteContent.eventCount.includes('+') ? '+' : ''} />
+            <StatCounter label="BUILDS" value={parseInt(siteContent.buildCount) || 70} suffix={siteContent.buildCount.includes('+') ? '+' : ''} />
           </div>
         </div>
       </section>
@@ -415,7 +482,7 @@ export default function Home() {
           className={`flex items-end gap-3 md:gap-4 h-[55vh] md:h-[75vh] animate-scroll-slow px-4 overflow-x-auto scrollbar-hide ${isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollBehavior: isDragging ? 'auto' : 'smooth' }}
         >
-          {collageImages.map((img, index) => (
+          {collageImages.map((img) => (
             <div
               key={img.id}
               className={`${img.width} ${img.height} ${img.offset} flex-shrink-0 relative overflow-hidden rounded-sm group`}
@@ -425,7 +492,7 @@ export default function Home() {
             >
               {img.type === "video" ? (
                 <video
-                  src={`/images/collage/${img.id}.${img.ext}`}
+                  src={img.filename}
                   autoPlay
                   loop
                   muted
@@ -433,13 +500,10 @@ export default function Home() {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               ) : (
-                <Image
-                  src={`/images/collage/${img.id}.${img.ext}`}
+                <img
+                  src={img.filename}
                   alt=""
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  quality={100}
-                  unoptimized
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               )}
               {/* Hover overlay */}
@@ -449,7 +513,7 @@ export default function Home() {
             </div>
           ))}
           {/* Duplicate for seamless loop */}
-          {collageImages.map((img, index) => (
+          {collageImages.map((img) => (
             <div
               key={`dup-${img.id}`}
               className={`${img.width} ${img.height} ${img.offset} flex-shrink-0 relative overflow-hidden rounded-sm group`}
@@ -459,7 +523,7 @@ export default function Home() {
             >
               {img.type === "video" ? (
                 <video
-                  src={`/images/collage/${img.id}.${img.ext}`}
+                  src={img.filename}
                   autoPlay
                   loop
                   muted
@@ -467,13 +531,10 @@ export default function Home() {
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               ) : (
-                <Image
-                  src={`/images/collage/${img.id}.${img.ext}`}
+                <img
+                  src={img.filename}
                   alt=""
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  quality={100}
-                  unoptimized
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
               )}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
@@ -492,8 +553,10 @@ export default function Home() {
         
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-xs text-spades-gold/60 font-mono mb-4 tracking-[0.3em] uppercase">Next Event</h2>
-          <h3 className="text-3xl md:text-5xl font-bold mb-2">NIGHT MEET</h3>
-          <p className="text-white/40 mb-10 font-mono">December 21, 2025 • Denver, CO</p>
+          <h3 className="text-3xl md:text-5xl font-bold mb-2">{nextEvent?.type?.toUpperCase() || 'NIGHT MEET'}</h3>
+          <p className="text-white/40 mb-10 font-mono">
+            {nextEvent ? `${nextEventDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} • ${nextEvent.location}` : 'December 21, 2025 • Denver, CO'}
+          </p>
           
           <CountdownTimer targetDate={nextEventDate} />
           
@@ -526,19 +589,17 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {featuredBuilds.map((build, index) => (
+            {siteContent.featuredBuilds.map((build, index) => (
               <Link
                 key={build.id}
                 href="/garage"
                 className={`group relative aspect-[4/5] overflow-hidden rounded-lg card-hover stagger-${index + 1}`}
                 style={{ animationFillMode: 'both' }}
               >
-                <Image
-                  src={`/images/collage/${build.image}.jpg`}
+                <img
+                  src={build.image}
                   alt={build.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  unoptimized
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
@@ -564,7 +625,7 @@ export default function Home() {
         <div className="max-w-3xl mx-auto">
           <h2 className="text-xs text-white/30 font-mono mb-8 tracking-widest">UPCOMING</h2>
           <div className="space-y-4">
-            {recentEvents.map((event) => (
+            {events.map((event) => (
               <Link
                 key={event.id}
                 href="/events"

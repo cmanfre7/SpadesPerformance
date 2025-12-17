@@ -1,44 +1,34 @@
+"use client";
+
 import Link from "next/link";
-
-// Sample event data - will be replaced with Supabase
-const events = [
-  {
-    id: "1",
-    date: "12.21.25",
-    type: "NIGHT MEET",
-    location: "DENVER",
-    time: "22:00",
-    access: "PRIVATE",
-    spots: { taken: 38, total: 50 },
-  },
-  {
-    id: "2",
-    date: "01.01.26",
-    type: "PRIVATE",
-    location: "TBA",
-    time: "23:00",
-    access: "INVITE ONLY",
-    spots: null, // Drop not open yet
-    dropDate: "12.27.25",
-  },
-  {
-    id: "3",
-    date: "01.15.26",
-    type: "WAREHOUSE",
-    location: "PRIVATE LOT",
-    time: "21:00",
-    access: "VERIFIED",
-    spots: { taken: 40, total: 40 },
-  },
-];
-
-const pastEvents = [
-  { id: "p1", date: "12.14.25", type: "NIGHT MEET", location: "DENVER", attendance: 47 },
-  { id: "p2", date: "12.07.25", type: "WAREHOUSE", location: "COMMERCE CITY", attendance: 35 },
-  { id: "p3", date: "11.30.25", type: "NIGHT MEET", location: "DENVER", attendance: 52 },
-];
+import { useEffect, useState } from "react";
+import { adminStore, Event } from "@/lib/admin-store";
 
 export default function EventsPage() {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
+
+  useEffect(() => {
+    const allEvents = adminStore.getEvents();
+    const now = new Date();
+    
+    const upcoming = allEvents.filter(e => {
+      if (e.isPast) return false;
+      const [month, day, year] = e.date.split('.');
+      const eventDate = new Date(`20${year}-${month}-${day}`);
+      return eventDate >= now;
+    });
+    
+    const past = allEvents.filter(e => {
+      if (e.isPast) return true;
+      const [month, day, year] = e.date.split('.');
+      const eventDate = new Date(`20${year}-${month}-${day}`);
+      return eventDate < now;
+    });
+    
+    setEvents(upcoming);
+    setPastEvents(past);
+  }, []);
   return (
     <div className="min-h-screen pt-20">
       {/* Header */}
@@ -80,28 +70,13 @@ export default function EventsPage() {
                       {event.access}
                     </span>
 
-                    {/* Spots or Drop Info */}
-                    {event.spots ? (
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-white/30 font-mono">
-                          {event.spots.taken}/{event.spots.total}
-                        </span>
-                        {event.spots.taken < event.spots.total ? (
-                          <Link
-                            href={`/events/${event.id}`}
-                            className="text-xs text-white/50 hover:text-white transition-colors font-mono"
-                          >
-                            RSVP
-                          </Link>
-                        ) : (
-                          <span className="text-xs text-white/20 font-mono">FULL</span>
-                        )}
-                      </div>
-                    ) : event.dropDate ? (
-                      <span className="text-xs text-white/30 font-mono">
-                        DROP {event.dropDate}
-                      </span>
-                    ) : null}
+                    {/* RSVP Link */}
+                    <Link
+                      href={`/events/${event.id}`}
+                      className="text-xs text-white/50 hover:text-white transition-colors font-mono"
+                    >
+                      RSVP
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -127,8 +102,6 @@ export default function EventsPage() {
                   <span>{event.type}</span>
                   <span className="text-white/10">/</span>
                   <span>{event.location}</span>
-                  <span className="text-white/10">/</span>
-                  <span className="text-white/20">{event.attendance} attended</span>
                 </div>
               </div>
             ))}
