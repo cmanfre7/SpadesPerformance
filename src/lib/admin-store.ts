@@ -22,7 +22,7 @@ export interface Member {
   name: string;
   instagram?: string;
   car?: string;
-  tags: ('member' | 'verified' | 'og')[];
+  tags: ('member' | 'verified' | 'og' | 'admin')[];
   joinedDate: string;
   inviteCode?: string;
   email?: string;
@@ -51,6 +51,7 @@ export interface SocialPost {
   id: string;
   platform: 'instagram' | 'tiktok';
   postUrl: string;
+  thumbnail?: string;
   embedCode?: string;
   caption?: string;
   displayOrder: number;

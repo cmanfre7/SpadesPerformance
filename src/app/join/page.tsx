@@ -12,10 +12,16 @@ export default function JoinPage() {
   const [isChecking, setIsChecking] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
-    instagram: "",
-    car: "",
+    username: "",
     email: "",
+    password: "",
+    confirmPassword: "",
+    instagram: "",
+    tiktok: "",
+    car: "",
+    bio: "",
   });
+  const [profilePic, setProfilePic] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -49,9 +55,14 @@ export default function JoinPage() {
         body: JSON.stringify({
           inviteCode,
           name: formData.name,
-          instagram: formData.instagram,
-          car: formData.car,
+          username: formData.username,
           email: formData.email,
+          password: formData.password,
+          instagram: formData.instagram,
+          tiktok: formData.tiktok,
+          car: formData.car,
+          bio: formData.bio,
+          profilePic,
         }),
       });
       const json = await res.json().catch(() => null);
@@ -128,28 +139,125 @@ export default function JoinPage() {
               {submitError}
             </div>
           )}
+
+          {/* Profile Picture */}
+          <div className="flex flex-col items-center mb-4">
+            <div className="w-24 h-24 rounded-full bg-white/10 border-2 border-dashed border-white/20 flex items-center justify-center overflow-hidden mb-2">
+              {profilePic ? (
+                <img src={profilePic} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white/30 text-3xl">👤</span>
+              )}
+            </div>
+            <label className="text-spades-gold text-sm cursor-pointer hover:underline">
+              Upload Photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => setProfilePic(ev.target?.result as string);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/50 text-sm mb-1">Full Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Your name"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-white/50 text-sm mb-1">Username *</label>
+              <input
+                type="text"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                placeholder="your_username"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-white/50 text-sm mb-1">Name *</label>
+            <label className="block text-white/50 text-sm mb-1">Email *</label>
             <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Your name"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="your@email.com"
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
               required
             />
           </div>
 
-          <div>
-            <label className="block text-white/50 text-sm mb-1">Instagram *</label>
-            <input
-              type="text"
-              value={formData.instagram}
-              onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-              placeholder="@yourhandle"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/50 text-sm mb-1">Password *</label>
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                required
+                minLength={6}
+              />
+            </div>
+            <div>
+              <label className="block text-white/50 text-sm mb-1">Confirm Password *</label>
+              <input
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                placeholder="••••••••"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+          {formData.password && formData.confirmPassword && formData.password !== formData.confirmPassword && (
+            <p className="text-red-400 text-xs">Passwords do not match</p>
+          )}
+
+          <div className="border-t border-white/10 pt-4 mt-4">
+            <p className="text-white/30 text-xs mb-3">SOCIAL & CAR INFO</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-white/50 text-sm mb-1">Instagram</label>
+              <input
+                type="text"
+                value={formData.instagram}
+                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                placeholder="@yourhandle"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-white/50 text-sm mb-1">TikTok</label>
+              <input
+                type="text"
+                value={formData.tiktok}
+                onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
+                placeholder="@yourhandle"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
@@ -164,19 +272,22 @@ export default function JoinPage() {
           </div>
 
           <div>
-            <label className="block text-white/50 text-sm mb-1">Email (optional)</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="your@email.com"
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+            <label className="block text-white/50 text-sm mb-1">Bio</label>
+            <textarea
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              placeholder="Tell us about yourself..."
+              rows={3}
+              maxLength={300}
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none resize-none"
             />
+            <p className="text-white/20 text-xs text-right">{formData.bio.length}/300</p>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors mt-6"
+            disabled={formData.password !== formData.confirmPassword}
+            className="w-full py-3 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Submit Request
           </button>

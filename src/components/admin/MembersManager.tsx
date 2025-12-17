@@ -67,17 +67,20 @@ export function MembersManager({
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
-  const generateInviteLink = () => {
-    (async () => {
-      const res = await fetch('/api/invites/generate', { method: 'POST' });
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.link) {
-        alert('Could not generate invite. Make sure you are logged in as admin and Supabase is configured.');
-        return;
-      }
+  const generateInviteLink = async () => {
+    const res = await fetch('/api/invites/generate', { method: 'POST' });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.link) {
+      alert('Could not generate invite. Make sure you are logged in as admin and Supabase is configured.');
+      return;
+    }
+    try {
       await navigator.clipboard.writeText(json.link);
       alert('Invite link copied to clipboard!');
-    })();
+    } catch {
+      // Clipboard blocked on localhost - show the link instead
+      prompt('Copy this invite link:', json.link);
+    }
   };
 
   const stats = {
@@ -199,11 +202,13 @@ export function MembersManager({
             <div>
               <label className="block text-white/50 text-sm mb-2">Rank</label>
               <select
-                value={formData.tags.includes('og') ? 'og' : formData.tags.includes('verified') ? 'verified' : 'member'}
+                value={formData.tags.includes('admin') ? 'admin' : formData.tags.includes('og') ? 'og' : formData.tags.includes('verified') ? 'verified' : 'member'}
                 onChange={(e) => {
                   const rank = e.target.value;
-                  // Hierarchy: OG includes Verified + Member, Verified includes Member
-                  if (rank === 'og') {
+                  // Hierarchy: Admin > OG > Verified > Member
+                  if (rank === 'admin') {
+                    setFormData({ ...formData, tags: ['member', 'verified', 'og', 'admin'] });
+                  } else if (rank === 'og') {
                     setFormData({ ...formData, tags: ['member', 'verified', 'og'] });
                   } else if (rank === 'verified') {
                     setFormData({ ...formData, tags: ['member', 'verified'] });
@@ -214,8 +219,9 @@ export function MembersManager({
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
               >
                 <option value="member">Member</option>
-                <option value="verified">Verified (includes Member)</option>
-                <option value="og">OG (includes Verified + Member)</option>
+                <option value="verified">Verified</option>
+                <option value="og">OG</option>
+                <option value="admin">Administrator</option>
               </select>
               <p className="text-white/30 text-xs mt-2">Higher ranks automatically include all lower ranks.</p>
             </div>
@@ -229,6 +235,32 @@ export function MembersManager({
                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
               />
             </div>
+            {!editingMember && (
+              <>
+                <div>
+                  <label className="block text-white/50 text-sm mb-1">Username *</label>
+                  <input
+                    type="text"
+                    value={(formData as any).username || ''}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value } as any)}
+                    placeholder="username (for login)"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                    required={!editingMember}
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/50 text-sm mb-1">Temporary Password *</label>
+                  <input
+                    type="password"
+                    value={(formData as any).password || ''}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value } as any)}
+                    placeholder="They can change this later"
+                    className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+                    required={!editingMember}
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className="block text-white/50 text-sm mb-1">Events Attended</label>
               <input
@@ -299,17 +331,18 @@ export function MembersManager({
                     <span className="text-white font-bold">{member.name}</span>
                     {(() => {
                       const tags = member.tags || [(member as any).tier || 'member'];
-                      // Show highest rank only (OG > Verified > Member)
-                      const highestRank = tags.includes('og') ? 'og' : tags.includes('verified') ? 'verified' : 'member';
+                      // Show highest rank only (Admin > OG > Verified > Member)
+                      const highestRank = tags.includes('admin') ? 'admin' : tags.includes('og') ? 'og' : tags.includes('verified') ? 'verified' : 'member';
                       return (
                         <span 
                           className={`px-2 py-0.5 text-xs rounded ${
+                            highestRank === 'admin' ? 'bg-red-500/20 text-red-400' :
                             highestRank === 'og' ? 'bg-spades-gold/20 text-spades-gold' :
                             highestRank === 'verified' ? 'bg-blue-500/20 text-blue-400' :
                             'bg-white/10 text-white/50'
                           }`}
                         >
-                          {highestRank === 'og' ? 'OG' : highestRank === 'verified' ? 'VERIFIED' : 'MEMBER'}
+                          {highestRank === 'admin' ? 'ADMIN' : highestRank === 'og' ? 'OG' : highestRank === 'verified' ? 'VERIFIED' : 'MEMBER'}
                         </span>
                       );
                     })()}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { adminStore, SocialPost, SocialConfig } from '@/lib/admin-store';
+import { SocialPost, SocialConfig } from '@/lib/admin-store';
 
 export function SocialsManager() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -18,13 +18,32 @@ export function SocialsManager() {
   const [tiktokToken, setTiktokToken] = useState('');
 
   useEffect(() => {
-    setPosts(adminStore.getSocials());
-    setConfig(adminStore.getSocialConfig());
+    fetch("/api/admin/socials")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) {
+          const mapped = (data.posts || []).map((p: any) => ({
+            id: p.id,
+            platform: p.platform,
+            postUrl: p.post_url,
+            caption: p.caption || "",
+            thumbnail: p.thumbnail || "",
+            displayOrder: p.display_order,
+            visible: p.visible !== false,
+            dateAdded: p.date_added,
+          })) as SocialPost[];
+          setPosts(mapped.sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999)));
+        }
+      })
+      .catch(() => {});
+    setConfig({
+      instagram: { connected: false, username: "" },
+      tiktok: { connected: false, username: "" },
+    });
   }, []);
 
   const saveConfig = (newConfig: SocialConfig) => {
     setConfig(newConfig);
-    adminStore.saveSocialConfig(newConfig);
   };
 
   const connectInstagram = () => {
@@ -87,8 +106,7 @@ export function SocialsManager() {
     const platform = newPostUrl.includes('instagram') ? 'instagram' : 
                      newPostUrl.includes('tiktok') ? 'tiktok' : 'instagram';
 
-    const newPost: SocialPost = {
-      id: adminStore.generateId(),
+    const payload = {
       platform,
       postUrl: newPostUrl,
       caption: newPostCaption,
@@ -97,30 +115,80 @@ export function SocialsManager() {
       dateAdded: new Date().toISOString(),
     };
 
-    const updated = [...posts, newPost];
-    setPosts(updated);
-    adminStore.saveSocials(updated);
-    setNewPostUrl('');
-    setNewPostCaption('');
+    fetch("/api/admin/socials", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) {
+          const newPost: SocialPost = {
+            id: data.post.id,
+            platform: data.post.platform,
+            postUrl: data.post.post_url,
+            caption: data.post.caption || "",
+            thumbnail: data.post.thumbnail || "",
+            displayOrder: data.post.display_order,
+            visible: data.post.visible !== false,
+            dateAdded: data.post.date_added,
+          };
+          setPosts((prev) => [...prev, newPost].sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999)));
+          setNewPostUrl('');
+          setNewPostCaption('');
+        } else {
+          alert(data.error || "Failed to add post");
+        }
+      })
+      .catch(() => alert("Failed to add post"));
   };
 
   const updatePost = (post: SocialPost) => {
-    const updated = posts.map(p => p.id === post.id ? post : p);
-    setPosts(updated);
-    adminStore.saveSocials(updated);
-    setEditingPost(null);
+    fetch(`/api/admin/socials/${post.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        platform: post.platform,
+        postUrl: post.postUrl,
+        caption: post.caption,
+        thumbnail: post.thumbnail,
+        displayOrder: post.displayOrder,
+        visible: post.visible,
+        dateAdded: post.dateAdded,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) {
+          const updated = posts.map((p) => (p.id === post.id ? post : p)).sort((a, b) => (a.displayOrder ?? 9999) - (b.displayOrder ?? 9999));
+          setPosts(updated);
+          setEditingPost(null);
+        } else {
+          alert(data.error || "Failed to update post");
+        }
+      })
+      .catch(() => alert("Failed to update post"));
   };
 
   const deletePost = (id: string) => {
-    const updated = posts.filter(p => p.id !== id);
-    setPosts(updated);
-    adminStore.saveSocials(updated);
+    fetch(`/api/admin/socials/${id}`, { method: "DELETE" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) {
+          const updated = posts.filter((p) => p.id !== id);
+          setPosts(updated);
+        } else {
+          alert(data.error || "Failed to delete post");
+        }
+      })
+      .catch(() => alert("Failed to delete post"));
   };
 
   const toggleVisibility = (id: string) => {
-    const updated = posts.map(p => p.id === id ? { ...p, visible: !p.visible } : p);
-    setPosts(updated);
-    adminStore.saveSocials(updated);
+    const target = posts.find((p) => p.id === id);
+    if (!target) return;
+    const nextVisible = !target.visible;
+    updatePost({ ...target, visible: nextVisible });
   };
 
   const movePost = (id: string, direction: 'up' | 'down') => {
@@ -133,9 +201,26 @@ export function SocialsManager() {
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     [newPosts[index], newPosts[swapIndex]] = [newPosts[swapIndex], newPosts[index]];
     newPosts.forEach((p, i) => p.displayOrder = i + 1);
-    
+
+    // persist both swapped posts
+    const updates = [newPosts[index], newPosts[swapIndex]];
+    updates.forEach((post) => {
+      fetch(`/api/admin/socials/${post.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: post.platform,
+          postUrl: post.postUrl,
+          caption: post.caption,
+          thumbnail: post.thumbnail,
+          displayOrder: post.displayOrder,
+          visible: post.visible,
+          dateAdded: post.dateAdded,
+        }),
+      }).catch(() => {});
+    });
+
     setPosts(newPosts);
-    adminStore.saveSocials(newPosts);
   };
 
   return (

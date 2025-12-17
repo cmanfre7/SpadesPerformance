@@ -12,8 +12,9 @@ import { SocialsManager } from '@/components/admin/SocialsManager';
 import { ContentManager } from '@/components/admin/ContentManager';
 import { CollageManager } from '@/components/admin/CollageManager';
 import { SettingsManager } from '@/components/admin/SettingsManager';
+import { JoinRequestsManager } from '@/components/admin/JoinRequestsManager';
 
-type Tab = 'overview' | 'events' | 'members' | 'merch' | 'marketplace' | 'socials' | 'content' | 'collage' | 'settings';
+type Tab = 'overview' | 'events' | 'members' | 'requests' | 'merch' | 'marketplace' | 'socials' | 'content' | 'collage' | 'settings';
 
 const resolveMemberTags = (member: Member): Member['tags'] => {
   if (member.tags && member.tags.length > 0) {
@@ -23,8 +24,9 @@ const resolveMemberTags = (member: Member): Member['tags'] => {
   return tier ? [tier] : ['member'];
 };
 
-const getHighestMemberRank = (member: Member): 'og' | 'verified' | 'member' => {
+const getHighestMemberRank = (member: Member): 'admin' | 'og' | 'verified' | 'member' => {
   const tags = resolveMemberTags(member);
+  if (tags.includes('admin')) return 'admin';
   if (tags.includes('og')) return 'og';
   if (tags.includes('verified')) return 'verified';
   return 'member';
@@ -44,6 +46,18 @@ export default function AdminDashboard() {
   const [editingMerch, setEditingMerch] = useState<MerchItem | null>(null);
   const [showNewForm, setShowNewForm] = useState(false);
 
+  const fetchMembers = async () => {
+    try {
+      const res = await fetch("/api/admin/members");
+      const json = await res.json();
+      if (json.ok) {
+        setMembers(json.members || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch members:", err);
+    }
+  };
+
   useEffect(() => {
     // Check auth
     const auth = sessionStorage.getItem('spades_admin_auth');
@@ -54,10 +68,18 @@ export default function AdminDashboard() {
 
     // Load data
     setEvents(adminStore.getEvents());
-    setMembers(adminStore.getMembers());
+    fetchMembers(); // Fetch from Supabase
     setMerch(adminStore.getMerch());
     setSiteContent(adminStore.getSiteContent());
   }, [router]);
+
+  // Refresh members when switching to members tab
+  useEffect(() => {
+    if (activeTab === 'members') {
+      fetchMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('spades_admin_auth');
@@ -84,26 +106,94 @@ export default function AdminDashboard() {
   };
 
   // Member handlers
-  const saveMember = (member: Member) => {
-    const incoming = editingMember
-      ? member
-      : { ...member, id: member.id || adminStore.generateId(), inviteCode: adminStore.generateInviteCode() };
-    const updated = editingMember
-      ? members.map(m => m.id === member.id ? incoming : m)
-      : [...members, incoming];
-    setMembers(updated);
-    adminStore.saveMembers(updated);
-    if (!editingMember && incoming.inviteCode) {
-      adminStore.addInvite(incoming.inviteCode);
+  const saveMember = async (member: Member) => {
+    try {
+      // Get highest rank from tags
+      const highestRank = getHighestMemberRank(member);
+      
+      // If no ID, it's a new member - use POST
+      if (!member.id || editingMember === null) {
+        // For new members, we need username and password from form
+        const username = (member as any).username;
+        const password = (member as any).password;
+        
+        if (!username || !password) {
+          alert("Username and password required to create a new member");
+          return;
+        }
+
+        const res = await fetch("/api/admin/members", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: member.name,
+            instagram: member.instagram || "",
+            car: member.car || "",
+            email: member.email || "",
+            rank: highestRank,
+            username: username.toLowerCase(),
+            password: password,
+          }),
+        });
+
+        const json = await res.json();
+        if (json.ok) {
+          await fetchMembers();
+          setEditingMember(null);
+          setShowNewForm(false);
+          alert("Member created! They can now log in with their username and password.");
+        } else {
+          alert(json.error || "Failed to create member");
+        }
+      } else {
+        // Existing member - use PATCH
+        const res = await fetch("/api/admin/members", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: member.id,
+            rank: highestRank,
+            name: member.name,
+            instagram: member.instagram,
+            car: member.car,
+            email: member.email,
+          }),
+        });
+
+        const json = await res.json();
+        if (json.ok) {
+          await fetchMembers();
+          setEditingMember(null);
+          setShowNewForm(false);
+        } else {
+          alert(json.error || "Failed to save member");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to save member:", err);
+      alert("Failed to save member");
     }
-    setEditingMember(null);
-    setShowNewForm(false);
   };
 
-  const deleteMember = (id: string) => {
-    const updated = members.filter(m => m.id !== id);
-    setMembers(updated);
-    adminStore.saveMembers(updated);
+  const deleteMember = async (id: string) => {
+    if (!confirm("Remove this member? They will be marked as rejected.")) return;
+    
+    try {
+      const res = await fetch(`/api/admin/members?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const json = await res.json();
+      if (json.ok) {
+        // Refresh members list
+        await fetchMembers();
+      } else {
+        alert(json.error || "Failed to remove member");
+      }
+    } catch (err) {
+      console.error("Failed to delete member:", err);
+      alert("Failed to remove member");
+    }
   };
 
   const generateNewInvite = (memberId: string) => {
@@ -149,6 +239,7 @@ export default function AdminDashboard() {
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'events', label: 'Events', icon: '📅' },
     { id: 'members', label: 'Members', icon: '👥' },
+    { id: 'requests', label: 'Join Requests', icon: '📩' },
     { id: 'merch', label: 'Merch', icon: '👕' },
     { id: 'marketplace', label: 'Marketplace', icon: '🏪' },
     { id: 'socials', label: 'Socials', icon: '📱' },
@@ -355,11 +446,12 @@ export default function AdminDashboard() {
                             <div className="text-white/40 text-xs">{member.car || 'No car listed'}</div>
                           </div>
                           <span className={`px-2 py-0.5 text-xs rounded ${
+                            rank === 'admin' ? 'bg-red-500/20 text-red-400' :
                             rank === 'og' ? 'bg-spades-gold/20 text-spades-gold' :
                             rank === 'verified' ? 'bg-blue-500/20 text-blue-400' :
                             'bg-white/10 text-white/50'
                           }`}>
-                            {rank === 'og' ? 'OG' : rank === 'verified' ? 'VERIFIED' : 'MEMBER'}
+                            {rank === 'admin' ? 'ADMIN' : rank === 'og' ? 'OG' : rank === 'verified' ? 'VERIFIED' : 'MEMBER'}
                           </span>
                         </div>
                       );
@@ -414,6 +506,11 @@ export default function AdminDashboard() {
               showNewForm={showNewForm}
               setShowNewForm={setShowNewForm}
             />
+          )}
+
+          {/* Join Requests Tab */}
+          {activeTab === 'requests' && (
+            <JoinRequestsManager />
           )}
 
           {/* Merch Tab */}

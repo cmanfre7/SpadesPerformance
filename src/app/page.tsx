@@ -382,12 +382,18 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-t from-spades-black via-spades-black/60 to-spades-black/30" />
           <div className="absolute inset-0 bg-gradient-to-r from-spades-black/50 via-transparent to-spades-black/50" />
           
-          {/* Subtle smoke particles drifting */}
+          {/* Subtle smoke particles drifting - more widespread */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Smoke wisps - more visible */}
+            {/* Smoke wisps - more visible and widespread, floating upwards */}
             <div className="absolute right-[15%] top-[25%] w-48 h-48 bg-white/[0.08] rounded-full blur-3xl animate-smoke-drift-1" />
             <div className="absolute right-[22%] top-[35%] w-36 h-36 bg-white/[0.06] rounded-full blur-2xl animate-smoke-drift-2" />
             <div className="absolute right-[10%] top-[30%] w-56 h-56 bg-white/[0.05] rounded-full blur-3xl animate-smoke-drift-3" />
+            <div className="absolute right-[8%] top-[20%] w-40 h-40 bg-white/[0.07] rounded-full blur-3xl animate-smoke-drift-1" style={{ animationDelay: '-8s' }} />
+            <div className="absolute right-[25%] top-[28%] w-44 h-44 bg-white/[0.06] rounded-full blur-2xl animate-smoke-drift-2" style={{ animationDelay: '-12s' }} />
+            <div className="absolute right-[5%] top-[15%] w-52 h-52 bg-white/[0.05] rounded-full blur-3xl animate-smoke-drift-3" style={{ animationDelay: '-15s' }} />
+            <div className="absolute right-[18%] top-[10%] w-38 h-38 bg-white/[0.06] rounded-full blur-2xl animate-smoke-drift-1" style={{ animationDelay: '-20s' }} />
+            <div className="absolute right-[30%] top-[22%] w-46 h-46 bg-white/[0.05] rounded-full blur-3xl animate-smoke-drift-2" style={{ animationDelay: '-18s' }} />
+            <div className="absolute right-[12%] top-[5%] w-50 h-50 bg-white/[0.04] rounded-full blur-3xl animate-smoke-drift-3" style={{ animationDelay: '-25s' }} />
             
             {/* Rubber particles - larger and more visible */}
             <div className="absolute right-[18%] bottom-[30%] w-2 h-2 bg-white/20 rounded-full animate-rubber-float-1" />
@@ -398,7 +404,7 @@ export default function Home() {
             <div className="absolute right-[20%] bottom-[26%] w-1.5 h-1.5 bg-white/14 rounded-full animate-rubber-float-1" style={{ animationDelay: '-8s' }} />
             <div className="absolute right-[10%] bottom-[34%] w-1 h-1 bg-white/16 rounded-full animate-rubber-float-3" style={{ animationDelay: '-12s' }} />
             
-            {/* Amber sparks/flames */}
+            {/* Amber sparks/flames - MORE SPARKS near tire area */}
             <div className="absolute right-[19%] bottom-[28%] w-1 h-1 bg-amber-500/60 rounded-full animate-spark-1 blur-[1px]" />
             <div className="absolute right-[15%] bottom-[32%] w-1.5 h-1.5 bg-orange-400/50 rounded-full animate-spark-2 blur-[1px]" />
             <div className="absolute right-[21%] bottom-[30%] w-0.5 h-0.5 bg-yellow-400/70 rounded-full animate-spark-3" />
@@ -406,6 +412,15 @@ export default function Home() {
             <div className="absolute right-[13%] bottom-[29%] w-0.5 h-0.5 bg-orange-500/60 rounded-full animate-spark-5" />
             <div className="absolute right-[23%] bottom-[33%] w-1 h-1 bg-yellow-500/45 rounded-full animate-spark-1 blur-[1px]" style={{ animationDelay: '-4s' }} />
             <div className="absolute right-[11%] bottom-[31%] w-1.5 h-1.5 bg-amber-500/40 rounded-full animate-spark-3" style={{ animationDelay: '-7s' }} />
+            {/* Additional sparks near tire */}
+            <div className="absolute right-[20%] bottom-[27%] w-0.5 h-0.5 bg-yellow-500/65 rounded-full animate-spark-2" style={{ animationDelay: '-2s' }} />
+            <div className="absolute right-[16%] bottom-[29%] w-1 h-1 bg-orange-500/55 rounded-full animate-spark-4 blur-[0.5px]" style={{ animationDelay: '-3s' }} />
+            <div className="absolute right-[14%] bottom-[27%] w-0.5 h-0.5 bg-amber-400/70 rounded-full animate-spark-1" style={{ animationDelay: '-5s' }} />
+            <div className="absolute right-[18%] bottom-[31%] w-1.5 h-1.5 bg-yellow-400/50 rounded-full animate-spark-3 blur-[1px]" style={{ animationDelay: '-6s' }} />
+            <div className="absolute right-[22%] bottom-[29%] w-0.5 h-0.5 bg-orange-400/60 rounded-full animate-spark-5" style={{ animationDelay: '-8s' }} />
+            <div className="absolute right-[12%] bottom-[28%] w-1 h-1 bg-amber-500/45 rounded-full animate-spark-2 blur-[1px]" style={{ animationDelay: '-9s' }} />
+            <div className="absolute right-[24%] bottom-[31%] w-0.5 h-0.5 bg-yellow-500/55 rounded-full animate-spark-4" style={{ animationDelay: '-10s' }} />
+            <div className="absolute right-[19%] bottom-[25%] w-1 h-1 bg-orange-500/50 rounded-full animate-spark-1 blur-[0.5px]" style={{ animationDelay: '-11s' }} />
           </div>
         </div>
 

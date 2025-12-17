@@ -30,7 +30,7 @@ export async function POST() {
     const code = generateCode();
     const { error } = await supabase.from('invites').insert({ code }).select('code').single();
     if (!error) {
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://spadesdenver.club';
+      const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : (process.env.NEXT_PUBLIC_SITE_URL || 'https://spadesdenver.club');
       return NextResponse.json({ ok: true, code, link: `${baseUrl}/join?invite=${code}` });
     }
   }

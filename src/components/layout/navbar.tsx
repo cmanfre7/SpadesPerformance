@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const navLinks = [
   { href: "/events", label: "Events" },
@@ -12,8 +11,49 @@ const navLinks = [
   { href: "/merch", label: "Merch" },
 ];
 
+type User = {
+  id: string;
+  username: string;
+  name: string;
+  profile_pic: string | null;
+  rank: string | null;
+};
+
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Check if user is logged in
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok && data.user) {
+          setUser(data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setUserMenuOpen(false);
+    window.location.href = "/";
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-spades-black/95 backdrop-blur-sm border-b border-white/5">
@@ -84,19 +124,96 @@ export function Navbar() {
                 <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
               </svg>
             </a>
-            <Link
-              href="/login"
-              className="text-sm text-white/60 font-mono hover:text-amber-300"
-              style={{ transition: 'all 0.3s ease' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textShadow = 'none';
-              }}
-            >
-              Member Sign in
-            </Link>
+
+            {/* User Menu or Sign In */}
+            {user ? (
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-9 h-9 rounded-full bg-white/10 overflow-hidden border-2 border-transparent hover:border-spades-gold/50 transition-colors">
+                    {user.profile_pic ? (
+                      <img src={user.profile_pic} alt={user.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/50 text-sm font-bold">
+                        {user.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <svg className={`w-4 h-4 text-white/40 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-spades-gray border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+                      <div className="font-bold text-white text-sm">{user.name}</div>
+                      <div className="text-white/40 text-xs font-mono">@{user.username}</div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-2">
+                      <Link
+                        href="/garage/me"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <span>👤</span> My Profile
+                      </Link>
+                      <Link
+                        href="/garage/me/edit"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <span>⚙️</span> Settings
+                      </Link>
+                      <Link
+                        href={`/garage/${user.username}`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <span>🚗</span> My Garage
+                      </Link>
+                      <Link
+                        href="/market/my-listings"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                      >
+                        <span>🏪</span> My Listings
+                      </Link>
+                    </div>
+
+                    {/* Logout */}
+                    <div className="border-t border-white/10 py-2">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 w-full text-left transition-colors"
+                      >
+                        <span>🚪</span> Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="text-sm text-white/60 font-mono hover:text-amber-300"
+                style={{ transition: 'all 0.3s ease' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.textShadow = 'none';
+                }}
+              >
+                Member Sign in
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -145,13 +262,53 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="border-t border-white/5 mt-2 pt-4">
-                <Link
-                  href="/login"
-                  className="block px-2 py-3 text-sm text-white/30 hover:text-white/50 font-mono"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Sign in
-                </Link>
+                {user ? (
+                  <>
+                    <div className="px-2 py-2 flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white/10 overflow-hidden">
+                        {user.profile_pic ? (
+                          <img src={user.profile_pic} alt={user.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white/50 text-xs font-bold">
+                            {user.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-white text-sm font-medium">{user.name}</div>
+                        <div className="text-white/40 text-xs">@{user.username}</div>
+                      </div>
+                    </div>
+                    <Link
+                      href="/garage/me"
+                      className="block px-2 py-3 text-sm text-white/50 hover:text-white/70 font-mono"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      My Profile
+                    </Link>
+                    <Link
+                      href="/market/my-listings"
+                      className="block px-2 py-3 text-sm text-white/50 hover:text-white/70 font-mono"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      My Listings
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-2 py-3 text-sm text-red-400 font-mono"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="block px-2 py-3 text-sm text-white/30 hover:text-white/50 font-mono"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Sign in
+                  </Link>
+                )}
               </div>
             </div>
           </div>
