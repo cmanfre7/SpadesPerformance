@@ -56,7 +56,7 @@ export default function MediaPage() {
         <div className="max-w-7xl mx-auto">
           <iframe 
             id="elfsight-iframe"
-            src="https://4a4f6d1811304dd7a971e2fbd54d1edf.elf.site" 
+            src="https://b221f54f117e4bb1a34e9d493ca8450e.elf.site" 
             style={{ border: 'none', width: '100%', minHeight: '800px' }}
             title="Instagram Feed"
           />
