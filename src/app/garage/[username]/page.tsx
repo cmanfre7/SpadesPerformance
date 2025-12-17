@@ -596,18 +596,33 @@ const VideoWidget = memo(function VideoWidget({ widget, cardClass }: { widget: G
     return driveUrl;
   };
 
+  // YouTube gets 16:9, everything else gets vertical phone format
+  const isHorizontal = isYouTube;
+
   return (
     <div className="flex justify-center">
-      <div className={`${cardClass} rounded-xl overflow-hidden w-full ${isYouTube ? 'max-w-[500px]' : 'max-w-[320px]'}`}>
+      <div className={`${cardClass} rounded-xl overflow-hidden ${isHorizontal ? 'w-full max-w-[480px]' : 'w-[280px]'}`}>
         {/* Header */}
-        <div className="px-3 py-2 border-b border-white/10">
+        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
           <h3 className="font-semibold text-white text-sm flex items-center gap-2">
             <span>🎬</span> {widget.title}
           </h3>
+          {url && (
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-white/60">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          )}
         </div>
         
-        {/* Video Container */}
-        <div className={`${isYouTube ? "aspect-video" : "aspect-[9/16]"} bg-black relative`}>
+        {/* Video Container - tight fit */}
+        <div 
+          className="relative bg-black overflow-hidden"
+          style={{ 
+            aspectRatio: isHorizontal ? '16/9' : '9/16',
+          }}
+        >
           {(() => {
             // YouTube
             if (url.includes("youtube.com/watch")) {
@@ -634,7 +649,7 @@ const VideoWidget = memo(function VideoWidget({ widget, cardClass }: { widget: G
               );
             }
             
-            // TikTok
+            // TikTok - use their embed which has its own aspect handling
             if (isTikTok) {
               const match = url.match(/video\/(\d+)/);
               const videoId = match?.[1];
@@ -650,15 +665,21 @@ const VideoWidget = memo(function VideoWidget({ widget, cardClass }: { widget: G
               }
             }
             
-            // Google Drive
+            // Google Drive - scale up to fill and crop overflow
             if (isGoogleDrive) {
               return (
-                <iframe
-                  src={getGoogleDriveEmbedUrl(url)}
-                  className="absolute inset-0 w-full h-full"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                />
+                <div className="absolute inset-0 overflow-hidden">
+                  <iframe
+                    src={getGoogleDriveEmbedUrl(url)}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      width: '180%',
+                      height: '180%',
+                    }}
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                </div>
               );
             }
             
@@ -668,7 +689,7 @@ const VideoWidget = memo(function VideoWidget({ widget, cardClass }: { widget: G
                 <video
                   src={url}
                   controls
-                  className="absolute inset-0 w-full h-full object-contain"
+                  className="absolute inset-0 w-full h-full object-cover"
                   preload="metadata"
                   playsInline
                 />
