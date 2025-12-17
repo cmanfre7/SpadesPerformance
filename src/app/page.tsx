@@ -330,6 +330,15 @@ export default function Home() {
             <div className="absolute right-[12%] bottom-[30%] w-2 h-2 bg-white/10 rounded-full animate-rubber-float-5" />
             <div className="absolute right-[20%] bottom-[26%] w-1.5 h-1.5 bg-white/14 rounded-full animate-rubber-float-1" style={{ animationDelay: '-8s' }} />
             <div className="absolute right-[10%] bottom-[34%] w-1 h-1 bg-white/16 rounded-full animate-rubber-float-3" style={{ animationDelay: '-12s' }} />
+            
+            {/* Amber sparks/flames */}
+            <div className="absolute right-[19%] bottom-[28%] w-1 h-1 bg-amber-500/60 rounded-full animate-spark-1 blur-[1px]" />
+            <div className="absolute right-[15%] bottom-[32%] w-1.5 h-1.5 bg-orange-400/50 rounded-full animate-spark-2 blur-[1px]" />
+            <div className="absolute right-[21%] bottom-[30%] w-0.5 h-0.5 bg-yellow-400/70 rounded-full animate-spark-3" />
+            <div className="absolute right-[17%] bottom-[26%] w-1 h-1 bg-amber-400/55 rounded-full animate-spark-4 blur-[0.5px]" />
+            <div className="absolute right-[13%] bottom-[29%] w-0.5 h-0.5 bg-orange-500/60 rounded-full animate-spark-5" />
+            <div className="absolute right-[23%] bottom-[33%] w-1 h-1 bg-yellow-500/45 rounded-full animate-spark-1 blur-[1px]" style={{ animationDelay: '-4s' }} />
+            <div className="absolute right-[11%] bottom-[31%] w-1.5 h-1.5 bg-amber-500/40 rounded-full animate-spark-3" style={{ animationDelay: '-7s' }} />
           </div>
         </div>
 
