@@ -1,27 +1,37 @@
 "use client";
 
 import { useEffect } from "react";
+import Script from "next/script";
 
 export default function MediaPage() {
   useEffect(() => {
-    // Load Elfsight script
-    if (typeof window !== 'undefined' && !document.getElementById('elfsight-platform-script')) {
-      const elfsightScript = document.createElement('script');
-      elfsightScript.id = 'elfsight-platform-script';
-      elfsightScript.src = 'https://elfsightcdn.com/platform.js';
-      elfsightScript.async = true;
-      document.body.appendChild(elfsightScript);
+    // Initialize iframe resizer after script loads
+    const initResizer = () => {
+      if (typeof window !== 'undefined' && (window as any).iFrameResize) {
+        const iframe = document.getElementById('elfsight-iframe');
+        if (iframe) {
+          (window as any).iFrameResize(iframe);
+        }
+      }
+    };
+
+    // Check if already loaded
+    if ((window as any).iFrameResize) {
+      initResizer();
     }
   }, []);
 
   return (
     <div className="min-h-screen pt-24">
-      <style jsx global>{`
-        /* Elfsight widget styling */
-        .elfsight-app-4a4f6d18-1130-4dd7-a971-e2fbd54d1edf {
-          width: 100%;
-        }
-      `}</style>
+      <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.2.10/iframeResizer.min.js"
+        onLoad={() => {
+          const iframe = document.getElementById('elfsight-iframe');
+          if (iframe && (window as any).iFrameResize) {
+            (window as any).iFrameResize(iframe);
+          }
+        }}
+      />
       
       {/* Header */}
       <section className="py-12 px-4">
@@ -41,13 +51,15 @@ export default function MediaPage() {
         </div>
       </section>
 
-      {/* Instagram Feed Widget - Full Width */}
+      {/* Instagram Feed - Elfsight iframe */}
       <section className="px-4 pb-12">
         <div className="max-w-7xl mx-auto">
-          <div 
-            className="elfsight-app-4a4f6d18-1130-4dd7-a971-e2fbd54d1edf" 
-            data-elfsight-app-lazy
-          ></div>
+          <iframe 
+            id="elfsight-iframe"
+            src="https://4a4f6d1811304dd7a971e2fbd54d1edf.elf.site" 
+            style={{ border: 'none', width: '100%', minHeight: '800px' }}
+            title="Instagram Feed"
+          />
         </div>
       </section>
     </div>
