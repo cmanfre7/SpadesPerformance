@@ -1,10 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { SpadeIcon } from "@/components/ui/spade-icon";
 
-export default function JoinPage() {
+function JoinForm() {
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get("invite") || "";
 
@@ -298,5 +298,17 @@ export default function JoinPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pt-20 flex items-center justify-center px-4 py-12">
+        <div className="text-white/30 font-mono text-sm">Loading...</div>
+      </div>
+    }>
+      <JoinForm />
+    </Suspense>
   );
 }
