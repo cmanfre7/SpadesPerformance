@@ -41,8 +41,8 @@ type GarageWidget = {
 
 const WIDGET_TYPES = [
   { type: "photos", label: "Photo Gallery", icon: "📸", description: "Add multiple photos of your build" },
-  { type: "video", label: "Video", icon: "🎬", description: "Embed YouTube or TikTok videos" },
-  { type: "spotify", label: "Theme Song", icon: "🎵", description: "Add a Spotify track to your page" },
+  { type: "video", label: "Clips", icon: "🎬", description: "Embed YouTube or TikTok videos" },
+  { type: "spotify", label: "Tracks", icon: "🎵", description: "Add a track to your page" },
   { type: "stats", label: "Car Stats", icon: "📊", description: "Power, torque, 0-60, quarter mile" },
   { type: "mods", label: "Mod List", icon: "🔧", description: "List your modifications" },
   { type: "text", label: "Text Block", icon: "📝", description: "Custom text section" },
@@ -844,10 +844,10 @@ function SpotifyWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; u
         type="text"
         value={widget.data.trackUrl || ""}
         onChange={(e) => updateWidget(widget.id, { ...widget.data, trackUrl: e.target.value })}
-        placeholder="Paste Spotify track URL (e.g., https://open.spotify.com/track/...)"
+        placeholder="Paste track link (Spotify, Apple Music, SoundCloud, etc.)"
         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
       />
-      <p className="text-white/30 text-xs mt-2">🎵 Your garage theme song - plays when people visit your page</p>
+      <p className="text-white/30 text-xs mt-2">🎵 Your garage tracks - most providers work; we auto-embed Spotify, Apple Music, and SoundCloud.</p>
     </div>
   );
 }

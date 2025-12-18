@@ -8,13 +8,12 @@ import { EventsManager } from '@/components/admin/EventsManager';
 import { MembersManager } from '@/components/admin/MembersManager';
 import { MerchManager } from '@/components/admin/MerchManager';
 import { MarketplaceManager } from '@/components/admin/MarketplaceManager';
-import { SocialsManager } from '@/components/admin/SocialsManager';
 import { ContentManager } from '@/components/admin/ContentManager';
 import { CollageManager } from '@/components/admin/CollageManager';
 import { SettingsManager } from '@/components/admin/SettingsManager';
 import { JoinRequestsManager } from '@/components/admin/JoinRequestsManager';
 
-type Tab = 'overview' | 'events' | 'members' | 'requests' | 'merch' | 'marketplace' | 'socials' | 'content' | 'collage' | 'settings';
+type Tab = 'overview' | 'events' | 'members' | 'requests' | 'merch' | 'marketplace' | 'content' | 'collage' | 'settings';
 
 const resolveMemberTags = (member: Member): Member['tags'] => {
   if (member.tags && member.tags.length > 0) {
@@ -242,7 +241,6 @@ export default function AdminDashboard() {
     { id: 'requests', label: 'Join Requests', icon: '📩' },
     { id: 'merch', label: 'Merch', icon: '👕' },
     { id: 'marketplace', label: 'Marketplace', icon: '🏪' },
-    { id: 'socials', label: 'Socials', icon: '📱' },
     { id: 'content', label: 'Site Content', icon: '✏️' },
     { id: 'collage', label: 'Homepage Reel', icon: '🖼️' },
     { id: 'settings', label: 'Settings', icon: '⚙️' },
@@ -471,8 +469,7 @@ export default function AdminDashboard() {
                     <p><strong className="text-white">🏪 Marketplace:</strong> Review and moderate member listings.</p>
                   </div>
                   <div className="space-y-2 text-white/60 text-sm">
-                    <p><strong className="text-white">📱 Socials:</strong> Add Instagram/TikTok posts to display.</p>
-                    <p><strong className="text-white">✏️ Content:</strong> Edit homepage text, stats, and featured builds.</p>
+                    <p><strong className="text-white">✏️ Content:</strong> Edit homepage text, stats, featured builds, and TikTok videos.</p>
                     <p><strong className="text-white">🖼️ Homepage Reel:</strong> Manage the scrolling photo collage.</p>
                     <p><strong className="text-white">⚙️ Settings:</strong> Site config, backups, and data management.</p>
                   </div>
@@ -529,11 +526,6 @@ export default function AdminDashboard() {
           {/* Marketplace Tab */}
           {activeTab === 'marketplace' && (
             <MarketplaceManager />
-          )}
-
-          {/* Socials Tab */}
-          {activeTab === 'socials' && (
-            <SocialsManager />
           )}
 
           {/* Content Tab */}

@@ -22,6 +22,7 @@ import {
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import Masonry from "react-masonry-css";
 
 // Lazy image component with loading state
 const LazyImage = memo(function LazyImage({ 
@@ -352,7 +353,23 @@ export default function GarageViewPage() {
           appearance: editingGarage.appearance,
         }),
       });
-      const data = await res.json();
+      
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const text = await res.text();
+          data = text ? JSON.parse(text) : {};
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          throw new Error("Invalid response from server");
+        }
+      } else {
+        const text = await res.text();
+        throw new Error(text || "Failed to save changes");
+      }
+      
       if (res.ok) {
         setGarage(data.garage);
         setIsEditing(false);
@@ -362,7 +379,7 @@ export default function GarageViewPage() {
       }
     } catch (error) {
       console.error("Error saving:", error);
-      alert("Failed to save changes");
+      alert(error instanceof Error ? error.message : "Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -389,7 +406,7 @@ export default function GarageViewPage() {
     }
     const WIDGET_TYPES = [
       { type: "photos", label: "Photo Gallery" },
-      { type: "video", label: "Video" },
+  { type: "video", label: "Clips" },
       { type: "spotify", label: "Theme Song" },
       { type: "stats", label: "Car Stats" },
       { type: "mods", label: "Mod List" },
@@ -696,6 +713,20 @@ export default function GarageViewPage() {
         </div>
       </div>
 
+      {/* Music Strip - anchored under hero */}
+      {(() => {
+        const musicWidget = displayGarage.widgets?.find((w: GarageWidget) => w.type === "spotify" && w.data.trackUrl);
+        if (!musicWidget) return null;
+        return (
+          <MusicStrip 
+            widget={musicWidget} 
+            accentColor={accent.text} 
+            isEditing={isEditing}
+            onEdit={() => setEditingWidget(musicWidget)}
+          />
+        );
+      })()}
+
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Appearance Settings */}
@@ -837,48 +868,79 @@ export default function GarageViewPage() {
                 Add Widget
               </button>
             </div>
-            <SortableContext items={(displayGarage.widgets || []).map((w: GarageWidget) => w.id)} strategy={rectSortingStrategy}>
-              <div className="grid grid-cols-12 gap-4">
-                {(displayGarage.widgets || []).map((widget: GarageWidget) => {
-                  const sizeClasses = {
-                    small: "col-span-12 md:col-span-4",
-                    medium: "col-span-12 md:col-span-6",
-                    large: "col-span-12 md:col-span-8",
-                    full: "col-span-12",
-                  };
-                  const size = widget.size || "full";
+            <SortableContext items={(displayGarage.widgets || []).filter((w: GarageWidget) => w.type !== "spotify").map((w: GarageWidget) => w.id)} strategy={rectSortingStrategy}>
+              <Masonry
+                breakpointCols={{
+                  default: 3,
+                  1280: 3,
+                  1024: 2,
+                  640: 1,
+                }}
+                className="flex w-auto -ml-4"
+                columnClassName="pl-4 bg-clip-padding"
+              >
+                {(displayGarage.widgets || []).filter((w: GarageWidget) => w.type !== "spotify").map((widget: GarageWidget) => {
+                  const isFull = widget.size === "full";
+                  
                   return (
-                    <SortableWidgetItem
-                      key={widget.id}
-                      widget={widget}
-                      sizeClasses={sizeClasses[size]}
-                      onEdit={() => setEditingWidget(widget)}
-                      onRemove={() => removeWidget(widget.id)}
-                      onSizeChange={(newSize) => updateWidget(widget.id, { size: newSize })}
-                      renderWidget={() => renderWidget(widget, setLightboxImage, cardClass, accent.text, true)}
-                    />
+                    <div 
+                      key={widget.id} 
+                      className="mb-4 break-inside-avoid"
+                      style={{
+                        width: isFull ? 'calc(100% - 1rem)' : '100%',
+                        marginLeft: isFull ? '0.5rem' : '0',
+                        marginRight: isFull ? '0.5rem' : '0',
+                        minHeight: 'min-content',
+                        display: 'inline-block',
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      <SortableWidgetItem
+                        widget={widget}
+                        sizeClasses=""
+                        onEdit={() => setEditingWidget(widget)}
+                        onRemove={() => removeWidget(widget.id)}
+                        onSizeChange={(newSize) => updateWidget(widget.id, { size: newSize })}
+                        renderWidget={() => renderWidget(widget, setLightboxImage, cardClass, accent.text, true)}
+                      />
+                    </div>
                   );
                 })}
-              </div>
+              </Masonry>
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="grid grid-cols-12 gap-4">
-            {displayGarage.widgets?.map((widget: GarageWidget) => {
-              const sizeClasses = {
-                small: "col-span-12 md:col-span-4",
-                medium: "col-span-12 md:col-span-6",
-                large: "col-span-12 md:col-span-8",
-                full: "col-span-12",
-              };
-              const size = widget.size || "full";
+          <Masonry
+            breakpointCols={{
+              default: 3,
+              1280: 3,
+              1024: 2,
+              640: 1,
+            }}
+            className="flex w-auto -ml-4"
+            columnClassName="pl-4 bg-clip-padding"
+          >
+            {displayGarage.widgets?.filter((w: GarageWidget) => w.type !== "spotify").map((widget: GarageWidget) => {
+              const isFull = widget.size === "full";
+              
               return (
-                <div key={widget.id} className={sizeClasses[size]}>
+                <div 
+                  key={widget.id} 
+                  className="mb-4 break-inside-avoid"
+                  style={{
+                    width: isFull ? 'calc(100% - 1rem)' : '100%',
+                    marginLeft: isFull ? '0.5rem' : '0',
+                    marginRight: isFull ? '0.5rem' : '0',
+                    minHeight: 'min-content',
+                    display: 'inline-block',
+                    verticalAlign: 'top',
+                  }}
+                >
                   {renderWidget(widget, setLightboxImage, cardClass, accent.text)}
                 </div>
               );
             })}
-          </div>
+          </Masonry>
         )}
 
         {/* Likes and Comments - Two Column Layout */}
@@ -1015,8 +1077,8 @@ export default function GarageViewPage() {
             <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
                 { type: "photos", label: "Photo Gallery", description: "Add multiple photos of your build" },
-                { type: "video", label: "Video", description: "Upload videos or embed from YouTube, TikTok" },
-                { type: "spotify", label: "Theme Song", description: "Add a Spotify track to your page" },
+                { type: "video", label: "Clips", description: "Upload videos or embed from YouTube, TikTok" },
+  { type: "spotify", label: "Tracks", description: "Add a track to your page" },
                 { type: "stats", label: "Car Stats", description: "Power, torque, 0-60, quarter mile" },
                 { type: "mods", label: "Mod List", description: "List your modifications" },
                 { type: "text", label: "Text Block", description: "Custom text section" },
@@ -1156,7 +1218,7 @@ function renderWidget(widget: GarageWidget, setLightboxImage: (img: string | nul
       widgetContent = <VideoWidget widget={widget} cardClass={cardClass} />;
       break;
     case "spotify":
-      widgetContent = <SpotifyWidget widget={widget} cardClass={cardClass} />;
+      widgetContent = <MusicWidget widget={widget} cardClass={cardClass} />;
       break;
     case "stats":
       widgetContent = <StatsWidget widget={widget} cardClass={cardClass} accentText={accentText} />;
@@ -1457,31 +1519,435 @@ const VideoWidget = memo(function VideoWidget({ widget, cardClass }: { widget: G
   );
 });
 
-const SpotifyWidget = memo(function SpotifyWidget({ widget, cardClass }: { widget: GarageWidget; cardClass: string }) {
+// Sleek music strip that anchors under the hero
+const MusicStrip = memo(function MusicStrip({ 
+  widget, 
+  accentColor,
+  isEditing,
+  onEdit
+}: { 
+  widget: GarageWidget; 
+  accentColor: string;
+  isEditing: boolean;
+  onEdit: () => void;
+}) {
   const trackUrl = widget.data.trackUrl;
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [embedUrl, setEmbedUrl] = useState(trackUrl || "");
+  const [startTimeMs, setStartTimeMs] = useState<number | null>(null);
+  const [isSoundCloudEmbed, setIsSoundCloudEmbed] = useState(false);
+  const [provider, setProvider] = useState<"spotify" | "soundcloud" | "apple" | "unknown">("unknown");
+  
+  // All hooks must be called before any conditional returns
+
+  const extractStartTime = (url: string): string | null => {
+    try {
+      const u = new URL(url);
+      const hash = decodeURIComponent(u.hash.replace("#", ""));
+      if (hash.startsWith("t=")) return hash.replace("t=", "");
+      const tParam = u.searchParams.get("t");
+      if (tParam) return tParam;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const toSeconds = (t: string): number | null => {
+    if (!t) return null;
+    const num = Number(t);
+    if (!Number.isNaN(num)) return num;
+    if (t.includes(":")) {
+      const parts = t.split(":").map((p) => Number(p));
+      if (parts.some((p) => Number.isNaN(p))) return null;
+      let seconds = 0;
+      for (const p of parts) {
+        seconds = seconds * 60 + p;
+      }
+      return seconds;
+    }
+    const match = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    if (match) {
+      const h = Number(match[1] || 0);
+      const m = Number(match[2] || 0);
+      const s = Number(match[3] || 0);
+      if ([h, m, s].some((x) => Number.isNaN(x))) return null;
+      return h * 3600 + m * 60 + s;
+    }
+    return null;
+  };
+
+  // Load SoundCloud Widget API
+  useEffect(() => {
+    if (typeof window !== "undefined" && !document.getElementById("sc-widget-api")) {
+      const script = document.createElement("script");
+      script.id = "sc-widget-api";
+      script.src = "https://w.soundcloud.com/player/api.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Use SoundCloud Widget API to seek after load
+  useEffect(() => {
+    if (!isSoundCloudEmbed || startTimeMs === null || !iframeRef.current) return;
+
+    const trySeek = () => {
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.SC && window.SC.Widget) {
+        // @ts-ignore
+        const widget = window.SC.Widget(iframeRef.current);
+        widget.bind("ready", () => {
+          widget.seekTo(startTimeMs);
+          widget.play();
+        });
+      }
+    };
+
+    const interval = setInterval(() => {
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.SC && window.SC.Widget) {
+        clearInterval(interval);
+        trySeek();
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isSoundCloudEmbed, startTimeMs, embedUrl]);
+
+  useEffect(() => {
+    let url = trackUrl;
+    const startTimeRaw = extractStartTime(trackUrl);
+    const startTimeSeconds = startTimeRaw ? toSeconds(startTimeRaw) : null;
+
+    const isSpotify = url.includes("open.spotify.com/track/");
+    const isApple = url.includes("music.apple.com");
+    const isSoundCloud = url.includes("soundcloud.com");
+
+    if (isSpotify) {
+      const trackId = url.split("/track/")[1]?.split("?")[0];
+      // Compact player for strip
+      url = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+      setEmbedUrl(url);
+      setProvider("spotify");
+      setIsSoundCloudEmbed(false);
+      return;
+    }
+
+    if (isApple) {
+      const applePath = url.split("music.apple.com")[1] || "";
+      url = `https://embed.music.apple.com${applePath}`;
+      if (startTimeSeconds !== null) {
+        url += `${url.includes("?") ? "&" : "?"}start=${startTimeSeconds}`;
+      }
+      setEmbedUrl(url);
+      setProvider("apple");
+      setIsSoundCloudEmbed(false);
+      return;
+    }
+
+    if (isSoundCloud) {
+      const resolve = async () => {
+        let resolved = trackUrl;
+        if (trackUrl.includes("on.soundcloud.com")) {
+          try {
+            const res = await fetch(`/api/soundcloud/resolve?url=${encodeURIComponent(trackUrl)}`);
+            const data = await res.json();
+            if (data?.ok && data?.url) {
+              resolved = data.url;
+            }
+          } catch {
+            // fall back
+          }
+        }
+        const resolvedWithoutHash = resolved.split("#")[0];
+        // Compact non-visual player for strip
+        const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+          resolvedWithoutHash
+        )}&color=%23d4af37&auto_play=true&show_user=true&visual=false&hide_related=true&show_teaser=false&show_artwork=true&buying=false&sharing=false&download=false`;
+        setEmbedUrl(playerUrl);
+        setProvider("soundcloud");
+        setIsSoundCloudEmbed(true);
+        if (startTimeSeconds !== null) {
+          setStartTimeMs(startTimeSeconds * 1000);
+        } else {
+          setStartTimeMs(null);
+        }
+      };
+      resolve();
+      return;
+    }
+
+    setEmbedUrl(url);
+    setProvider("unknown");
+    setIsSoundCloudEmbed(false);
+  }, [trackUrl]);
+
+  // Early return after all hooks
   if (!trackUrl) return null;
 
-  // Convert Spotify URL to embed
-  let embedUrl = trackUrl;
-  if (trackUrl.includes("open.spotify.com/track/")) {
-    const trackId = trackUrl.split("/track/")[1]?.split("?")[0];
-    embedUrl = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
-  }
+  const providerColors = {
+    spotify: "from-green-500/20 to-green-500/5 border-green-500/30",
+    soundcloud: "from-orange-500/20 to-orange-500/5 border-orange-500/30",
+    apple: "from-pink-500/20 to-pink-500/5 border-pink-500/30",
+    unknown: "from-white/10 to-white/5 border-white/20",
+  };
+
+  const iframeHeight = provider === "spotify" ? 80 : provider === "soundcloud" ? 80 : 80;
 
   return (
-    <div className={`${cardClass} rounded-xl p-6 border border-green-500/20 bg-gradient-to-r from-green-500/10 to-transparent`}>
+    <div className={`relative bg-gradient-to-r ${providerColors[provider]} border-b backdrop-blur-sm`}>
+      <div className="max-w-6xl mx-auto px-4 py-2">
+        <div className="flex items-center gap-3">
+          {/* Track label */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-xs font-bold uppercase tracking-wider ${accentColor}`}>
+              ♪ Now Playing
+            </span>
+          </div>
+          
+          {/* Embedded player */}
+          <div className="flex-1 min-w-0 overflow-hidden rounded">
+            <iframe
+              ref={iframeRef}
+              src={embedUrl}
+              width="100%"
+              height={iframeHeight}
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="eager"
+              className="rounded"
+              style={{ 
+                border: "none",
+                // Invert SoundCloud widget to dark mode
+                filter: provider === "soundcloud" ? "invert(1) hue-rotate(180deg)" : "none",
+              }}
+            />
+          </div>
+
+          {/* Edit button when editing */}
+          {isEditing && (
+            <button
+              onClick={onEdit}
+              className="shrink-0 px-3 py-1.5 bg-white/10 text-white text-xs rounded hover:bg-white/20 transition-colors border border-white/20"
+            >
+              Edit
+            </button>
+          )}
+
+          {/* External link */}
+          <a
+            href={trackUrl}
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="shrink-0 p-2 text-white/40 hover:text-white transition-colors"
+            title="Open in new tab"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const MusicWidget = memo(function MusicWidget({ widget, cardClass }: { widget: GarageWidget; cardClass: string }) {
+  const trackUrl = widget.data.trackUrl;
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [embedUrl, setEmbedUrl] = useState(trackUrl || "");
+  const [height, setHeight] = useState(200);
+  const [providerColor, setProviderColor] = useState("border-green-500/20 from-green-500/10");
+  const [startTimeMs, setStartTimeMs] = useState<number | null>(null);
+  const [isSoundCloudEmbed, setIsSoundCloudEmbed] = useState(false);
+
+  const extractStartTime = (url: string): string | null => {
+    try {
+      const u = new URL(url);
+      const hash = decodeURIComponent(u.hash.replace("#", ""));
+      if (hash.startsWith("t=")) return hash.replace("t=", "");
+      const tParam = u.searchParams.get("t");
+      if (tParam) return tParam;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const toSeconds = (t: string): number | null => {
+    // Supports formats like 75, 1:15, 1m15s, 75s
+    if (!t) return null;
+    const num = Number(t);
+    if (!Number.isNaN(num)) return num;
+
+    // 1:15 or 01:02:03
+    if (t.includes(":")) {
+      const parts = t.split(":").map((p) => Number(p));
+      if (parts.some((p) => Number.isNaN(p))) return null;
+      let seconds = 0;
+      for (const p of parts) {
+        seconds = seconds * 60 + p;
+      }
+      return seconds;
+    }
+
+    // 1m15s or 75s
+    const match = t.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    if (match) {
+      const h = Number(match[1] || 0);
+      const m = Number(match[2] || 0);
+      const s = Number(match[3] || 0);
+      if ([h, m, s].some((x) => Number.isNaN(x))) return null;
+      return h * 3600 + m * 60 + s;
+    }
+    return null;
+  };
+
+  // Load SoundCloud Widget API
+  useEffect(() => {
+    if (typeof window !== "undefined" && !document.getElementById("sc-widget-api")) {
+      const script = document.createElement("script");
+      script.id = "sc-widget-api";
+      script.src = "https://w.soundcloud.com/player/api.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Use SoundCloud Widget API to seek after load
+  useEffect(() => {
+    if (!isSoundCloudEmbed || startTimeMs === null || !iframeRef.current) return;
+
+    const trySeek = () => {
+      // @ts-ignore - SC is loaded from external script
+      if (typeof window !== "undefined" && window.SC && window.SC.Widget) {
+        // @ts-ignore
+        const widget = window.SC.Widget(iframeRef.current);
+        widget.bind("ready", () => {
+          widget.seekTo(startTimeMs);
+          widget.play();
+        });
+      }
+    };
+
+    // Wait for script to load
+    const interval = setInterval(() => {
+      // @ts-ignore
+      if (typeof window !== "undefined" && window.SC && window.SC.Widget) {
+        clearInterval(interval);
+        trySeek();
+      }
+    }, 100);
+
+    // Cleanup
+    return () => clearInterval(interval);
+  }, [isSoundCloudEmbed, startTimeMs, embedUrl]);
+
+  useEffect(() => {
+    let url = trackUrl;
+    let h = 200;
+    let color = "border-green-500/20 from-green-500/10";
+    const startTimeRaw = extractStartTime(trackUrl);
+    const startTimeSeconds = startTimeRaw ? toSeconds(startTimeRaw) : null;
+
+    const isSpotify = url.includes("open.spotify.com/track/");
+    const isApple = url.includes("music.apple.com");
+    const isSoundCloud = url.includes("soundcloud.com");
+
+    if (isSpotify) {
+      const trackId = url.split("/track/")[1]?.split("?")[0];
+      url = `https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`;
+      h = 152;
+      color = "border-green-500/20 from-green-500/10";
+      setEmbedUrl(url);
+      setHeight(h);
+      setProviderColor(color);
+      setIsSoundCloudEmbed(false);
+      return;
+    }
+
+    if (isApple) {
+      const applePath = url.split("music.apple.com")[1] || "";
+      url = `https://embed.music.apple.com${applePath}`;
+      if (startTimeSeconds !== null) {
+        url += `${url.includes("?") ? "&" : "?"}start=${startTimeSeconds}`;
+      }
+      h = 200;
+      color = "border-pink-400/20 from-pink-400/10";
+      setEmbedUrl(url);
+      setHeight(h);
+      setProviderColor(color);
+      setIsSoundCloudEmbed(false);
+      return;
+    }
+
+    if (isSoundCloud) {
+      const resolve = async () => {
+        let resolved = trackUrl;
+        // Resolve short links like on.soundcloud.com
+        if (trackUrl.includes("on.soundcloud.com")) {
+          try {
+            const res = await fetch(`/api/soundcloud/resolve?url=${encodeURIComponent(trackUrl)}`);
+            const data = await res.json();
+            if (data?.ok && data?.url) {
+              resolved = data.url;
+            }
+          } catch {
+            // fall back to original URL
+          }
+        }
+        const resolvedWithoutHash = resolved.split("#")[0];
+        const playerUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+          resolvedWithoutHash
+        )}&color=%23d4af37&auto_play=true&show_user=true&visual=true&hide_related=true&show_teaser=false`;
+        setEmbedUrl(playerUrl);
+        setHeight(360);
+        setProviderColor("border-orange-400/20 from-orange-400/10");
+        setIsSoundCloudEmbed(true);
+        if (startTimeSeconds !== null) {
+          setStartTimeMs(startTimeSeconds * 1000);
+        } else {
+          setStartTimeMs(null);
+        }
+      };
+      resolve();
+      return;
+    }
+
+    // Fallback: unknown provider, just use given URL in iframe height 200
+    setEmbedUrl(url);
+    setHeight(200);
+    setProviderColor("border-white/10 from-white/5");
+    setIsSoundCloudEmbed(false);
+  }, [trackUrl]);
+
+  // Early return after all hooks
+  if (!trackUrl) return null;
+
+  return (
+    <div className={`${cardClass} rounded-xl p-6 border ${providerColor} bg-gradient-to-r to-transparent`}>
       <h3 className="text-lg font-bold text-white mb-4">
-        Theme Song
+        Tracks
       </h3>
       <iframe
+        ref={iframeRef}
         src={embedUrl}
         width="100%"
-        height="152"
+        height={height}
         frameBorder="0"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        loading="lazy"
+        loading="eager"
         className="rounded-lg"
       />
+      <a
+        href={trackUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-3 inline-flex items-center gap-2 text-xs text-white/50 hover:text-white transition-colors"
+      >
+        Open original link →
+      </a>
     </div>
   );
 });
@@ -1748,16 +2214,16 @@ function PhotosWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; up
       {widget.data.images?.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={(widget.data.images || []).map((_: string, i: number) => `photo-${i}`)} strategy={rectSortingStrategy}>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {widget.data.images.map((url: string, i: number) => (
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {widget.data.images.map((url: string, i: number) => (
                 <SortablePhotoItem
                   key={`photo-${i}`}
                   url={url}
                   index={i}
                   onRemove={() => updateWidget({ ...widget.data, images: widget.data.images.filter((_: string, idx: number) => idx !== i) })}
                 />
-              ))}
-            </div>
+          ))}
+        </div>
           </SortableContext>
         </DndContext>
       )}
@@ -1876,13 +2342,16 @@ function VideoWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; upd
 
 function SpotifyWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; updateWidget: (data: any) => void }) {
   return (
+    <div className="space-y-2">
     <input
       type="text"
       value={widget.data.trackUrl || ""}
       onChange={(e) => updateWidget({ ...widget.data, trackUrl: e.target.value })}
-      placeholder="Paste Spotify track URL"
+        placeholder="Paste track link (Spotify, Apple Music, SoundCloud, etc.)"
       className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
     />
+      <p className="text-white/40 text-xs">Most music providers work. We auto-embed Spotify, Apple Music, and SoundCloud.</p>
+    </div>
   );
 }
 

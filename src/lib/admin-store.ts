@@ -90,6 +90,8 @@ export interface SiteContent {
     owner: string;
     image: string;
   }[];
+  // TikTok videos for archive page
+  tiktokVideos: string[];
 }
 
 export interface CollageItem {
@@ -231,6 +233,7 @@ const defaultSiteContent: SiteContent = {
     { id: "2", name: "Twin Turbo 370Z", owner: "@z_nation", image: "4" },
     { id: "3", name: "Built STI", owner: "@subie_sean", image: "7" },
   ],
+  tiktokVideos: [],
 };
 
 const defaultCollage: CollageItem[] = [

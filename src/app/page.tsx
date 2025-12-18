@@ -604,33 +604,39 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {siteContent.featuredBuilds.map((build, index) => (
-              <Link
-                key={build.id}
-                href="/garage"
-                className={`group relative aspect-[4/5] overflow-hidden rounded-lg card-hover stagger-${index + 1}`}
-                style={{ animationFillMode: 'both' }}
-              >
-                <img
-                  src={build.image}
-                  alt={build.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
-                
-                {/* Content */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  <h4 className="text-xl font-bold mb-1 group-hover:text-spades-gold transition-colors">
-                    {build.name}
-                  </h4>
-                  <p className="text-white/50 text-sm font-mono">{build.owner}</p>
-                </div>
-                
-                {/* Corner accent */}
-                <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-white/0 group-hover:border-spades-gold transition-colors duration-300" />
-              </Link>
-            ))}
+            {siteContent.featuredBuilds.map((build, index) => {
+              // Extract username from owner handle (e.g., "@turbo_mike" -> "turbo_mike")
+              const username = build.owner?.replace('@', '').trim() || '';
+              const garageLink = username ? `/garage/${username}` : '/garage';
+              
+              return (
+                <Link
+                  key={build.id}
+                  href={garageLink}
+                  className={`group relative aspect-[4/5] overflow-hidden rounded-lg card-hover stagger-${index + 1}`}
+                  style={{ animationFillMode: 'both' }}
+                >
+                  <img
+                    src={build.image}
+                    alt={build.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                  
+                  {/* Content */}
+                  <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                    <h4 className="text-xl font-bold mb-1 group-hover:text-spades-gold transition-colors">
+                      {build.name}
+                    </h4>
+                    <p className="text-white/50 text-sm font-mono">{build.owner}</p>
+                  </div>
+                  
+                  {/* Corner accent */}
+                  <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-white/0 group-hover:border-spades-gold transition-colors duration-300" />
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
