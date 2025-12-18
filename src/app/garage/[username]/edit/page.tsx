@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { SpadeIcon } from "@/components/ui/spade-icon";
-import { uploadImage } from "@/lib/upload";
+import { uploadImage, uploadVideo } from "@/lib/upload";
 import {
   DndContext,
   closestCenter,
@@ -56,16 +56,23 @@ type Garage = {
 };
 
 const WIDGET_TYPES = [
-  { type: "photos", label: "Photo Gallery", icon: "📸", description: "Add multiple photos of your build" },
-  { type: "video", label: "Video", icon: "🎬", description: "Embed YouTube or TikTok videos" },
-  { type: "spotify", label: "Theme Song", icon: "🎵", description: "Add a Spotify track to your page" },
-  { type: "stats", label: "Car Stats", icon: "📊", description: "Power, torque, 0-60, quarter mile" },
-  { type: "mods", label: "Mod List", icon: "🔧", description: "List your modifications" },
-  { type: "text", label: "Text Block", icon: "📝", description: "Custom text section" },
-  { type: "rollrace", label: "Roll Race Record", icon: "🏁", description: "Track your wins and losses" },
-  { type: "social", label: "Social Links", icon: "🔗", description: "Link your socials" },
-  { type: "buttons", label: "CTA Buttons", icon: "🔘", description: "Add custom buttons/links with emoji" },
+  { type: "photos", label: "Photo Gallery", description: "Add multiple photos of your build" },
+  { type: "video", label: "Video", description: "Upload videos or embed from YouTube, TikTok" },
+  { type: "spotify", label: "Theme Song", description: "Add a Spotify track to your page" },
+  { type: "stats", label: "Car Stats", description: "Power, torque, 0-60, quarter mile" },
+  { type: "mods", label: "Mod List", description: "List your modifications" },
+  { type: "text", label: "Text Block", description: "Custom text section" },
+  { type: "rollrace", label: "Roll Race Record", description: "Track your wins and losses" },
+  { type: "social", label: "Social Links", description: "Link your socials" },
+  { type: "buttons", label: "CTA Buttons", description: "Add custom buttons/links" },
 ];
+
+const SIZE_LABELS: Record<string, { label: string; description: string }> = {
+  small: { label: "Narrow", description: "1/3 page width" },
+  medium: { label: "Medium", description: "1/2 page width" },
+  large: { label: "Wide", description: "2/3 page width" },
+  full: { label: "Full Width", description: "Full page width" },
+};
 
 // Sortable Widget Card for drag-and-drop
 function SortableWidgetCard({ 
@@ -96,18 +103,13 @@ function SortableWidgetCard({
   };
 
   const widgetInfo = WIDGET_TYPES.find(w => w.type === widget.type);
-  const sizeLabels: Record<string, string> = {
-    small: "S",
-    medium: "M", 
-    large: "L",
-    full: "F",
-  };
+  const sizeInfo = SIZE_LABELS[widget.size || "full"];
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white/5 rounded-xl border border-white/10 overflow-hidden hover:border-spades-gold/30 transition-all ${
+      className={`bg-white/5 rounded-lg border border-white/10 overflow-hidden hover:border-spades-gold/30 transition-all ${
         isDragging ? "shadow-2xl shadow-spades-gold/20 scale-105" : ""
       }`}
     >
@@ -118,12 +120,11 @@ function SortableWidgetCard({
         className="flex items-center justify-between px-3 py-2 bg-white/5 border-b border-white/10 cursor-grab active:cursor-grabbing"
       >
         <div className="flex items-center gap-2">
-          <span className="text-lg">{widgetInfo?.icon}</span>
-          <span className="font-medium text-white text-sm truncate max-w-[100px]">{widget.title}</span>
+          <span className="font-medium text-white text-sm truncate">{widget.title}</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="text-xs text-white/40 bg-white/10 px-1.5 py-0.5 rounded">
-            {sizeLabels[widget.size || "full"]}
+          <span className="text-xs text-white/40 bg-white/10 px-2 py-0.5 rounded" title={sizeInfo?.description}>
+            {sizeInfo?.label || "Full Width"}
           </span>
         </div>
       </div>
@@ -150,17 +151,18 @@ function SortableWidgetCard({
           value={widget.size || "full"}
           onChange={(e) => onSizeChange(e.target.value as GarageWidget["size"])}
           className="flex-1 py-2 text-xs text-white/60 bg-transparent border-l border-white/10 hover:bg-white/5 focus:outline-none text-center"
+          onClick={(e) => e.stopPropagation()}
         >
-          <option value="small">1/3</option>
-          <option value="medium">1/2</option>
-          <option value="large">2/3</option>
-          <option value="full">Full</option>
+          <option value="small">Narrow</option>
+          <option value="medium">Medium</option>
+          <option value="large">Wide</option>
+          <option value="full">Full Width</option>
         </select>
         <button
           onClick={onRemove}
           className="flex-1 py-2 text-xs text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors border-l border-white/10"
         >
-          ✕
+          Delete
         </button>
       </div>
     </div>
@@ -291,7 +293,7 @@ export default function EditGaragePage() {
       case "video": return { type: "url", url: "", videoData: "", fileName: "", fileType: "" };
       case "spotify": return { trackUrl: "" };
       case "stats": return { power: "", torque: "", zeroToSixty: "", quarterMile: "", topSpeed: "" };
-      case "mods": return { categories: [{ name: "Engine", items: [] }, { name: "Suspension", items: [] }, { name: "Exterior", items: [] }] };
+      case "mods": return { categories: [{ name: "Engine", items: [] }, { name: "Fuel system", items: [] }, { name: "Drivetrain", items: [] }, { name: "Suspension", items: [] }, { name: "Wheels and Tires", items: [] }, { name: "Exterior", items: [] }, { name: "Extras", items: [] }] };
       case "text": return { content: "" };
       case "rollrace": return { wins: 0, losses: 0, notable: [] };
       case "social": return { links: [] };
@@ -364,7 +366,6 @@ export default function EditGaragePage() {
     return (
       <div className="min-h-screen pt-32 px-4 py-12">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="text-6xl mb-4">🚗</div>
           <h1 className="text-2xl font-bold text-white mb-2">Garage Not Found</h1>
           <p className="text-white/50 mb-6">{error || "This garage doesn't exist or you don't have permission to edit it."}</p>
           <Link href="/garage" className="text-spades-gold hover:underline">
@@ -380,7 +381,6 @@ export default function EditGaragePage() {
     return (
       <div className="min-h-screen pt-32 px-4 py-12">
         <div className="max-w-2xl mx-auto text-center">
-          <div className="text-6xl mb-4">🔒</div>
           <h1 className="text-2xl font-bold text-white mb-2">Access Denied</h1>
           <p className="text-white/50 mb-6">You can only edit your own garage.</p>
           <Link href={`/garage/${username}`} className="text-spades-gold hover:underline">
@@ -392,21 +392,40 @@ export default function EditGaragePage() {
   }
 
   return (
-    <div className="min-h-screen pt-32 px-4 py-12 bg-gradient-to-b from-spades-black via-spades-dark to-spades-black">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen pt-24 bg-gradient-to-b from-spades-black via-spades-dark to-spades-black">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-spades-black/95 backdrop-blur-sm border-b border-white/10 px-4 py-4">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href={`/garage/${username}`} className="text-white/50 hover:text-white transition-colors">
+            <Link href={`/garage/${username}`} className="text-white/50 hover:text-white transition-colors text-sm">
               ← Back to Garage
             </Link>
             <span className="text-white/20">|</span>
-            <h1 className="text-2xl font-black text-white flex items-center gap-2">
-              <SpadeIcon className="w-6 h-6 text-spades-gold" />
-              Edit Your Garage
-            </h1>
+            <h1 className="text-xl font-bold text-white">Edit Garage</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href={`/garage/${username}`}
+              className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+            >
+              Cancel
+            </Link>
+            <button
+              onClick={handleSubmit}
+              disabled={saving}
+              className="px-6 py-2 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors disabled:opacity-50 text-sm"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Split Screen Layout */}
+      <div className="flex h-[calc(100vh-73px)] overflow-hidden">
+        {/* Left Panel - Controls */}
+        <div className="w-1/2 border-r border-white/10 overflow-y-auto">
+          <div className="p-6 space-y-6">
 
         {error && (
           <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400">
@@ -414,9 +433,9 @@ export default function EditGaragePage() {
           </div>
         )}
 
-        {/* Cover Image Section */}
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-          <h2 className="text-lg font-bold text-white mb-4">🎨 Cover Photo</h2>
+            {/* Cover Image Section */}
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <h2 className="text-sm font-bold text-white mb-3">Cover Photo</h2>
           <div className="flex items-start gap-6">
             <div className="w-64 h-40 bg-white/10 rounded-lg overflow-hidden flex-shrink-0 border-2 border-white/20">
               {coverImage ? (
@@ -458,9 +477,9 @@ export default function EditGaragePage() {
           </div>
         </div>
 
-        {/* Basic Info */}
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-          <h2 className="text-lg font-bold text-white mb-4">🚗 Car Information</h2>
+            {/* Basic Info */}
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <h2 className="text-sm font-bold text-white mb-3">Car Information</h2>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-white/50 text-sm mb-1">Year *</label>
@@ -540,9 +559,9 @@ export default function EditGaragePage() {
           </div>
         </div>
 
-        {/* Appearance Settings */}
-        <div className="bg-gradient-to-r from-spades-gold/10 to-transparent rounded-xl p-6 border border-spades-gold/20 mb-6">
-          <h2 className="text-lg font-bold text-spades-gold mb-4">🎨 Appearance</h2>
+            {/* Appearance Settings */}
+            <div className="bg-gradient-to-r from-spades-gold/10 to-transparent rounded-lg p-4 border border-spades-gold/20">
+              <h2 className="text-sm font-bold text-spades-gold mb-3">Appearance</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-white/50 text-sm mb-2">Accent Color</label>
@@ -569,6 +588,7 @@ export default function EditGaragePage() {
                 <option value="dark">Dark</option>
                 <option value="carbon">Carbon</option>
                 <option value="outline">Outline</option>
+                <option value="transparent">Clear</option>
               </select>
             </div>
             <div>
@@ -598,18 +618,18 @@ export default function EditGaragePage() {
           </div>
         </div>
 
-        {/* Widgets Section */}
-        <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">✨ Customize Your Garage</h2>
-            <button
-              onClick={() => setShowWidgetPicker(true)}
-              className="px-4 py-2 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors text-sm"
-            >
-              + Add Widget
-            </button>
-          </div>
-          <p className="text-white/50 text-sm mb-6">Drag widgets to reorder • Click to edit • Resize with dropdown</p>
+            {/* Widgets Section */}
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-white">Widgets</h2>
+                <button
+                  onClick={() => setShowWidgetPicker(true)}
+                  className="px-3 py-1.5 bg-spades-gold text-black font-bold rounded text-xs hover:bg-spades-gold/90 transition-colors"
+                >
+                  Add Widget
+                </button>
+              </div>
+              <p className="text-white/40 text-xs mb-4">Drag to reorder • Click to edit</p>
 
           {/* Draggable Widget Grid */}
           <DndContext
@@ -636,94 +656,154 @@ export default function EditGaragePage() {
             </SortableContext>
           </DndContext>
 
-          {widgets.length === 0 && (
-            <div className="text-center py-12 text-white/30">
-              <div className="text-4xl mb-4">🎨</div>
-              <p>No widgets yet. Add some to customize your garage!</p>
-            </div>
-          )}
-        </div>
-
-        {/* Widget Picker Modal */}
-        {showWidgetPicker && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowWidgetPicker(false)}>
-            <div className="bg-spades-gray rounded-xl border border-white/10 max-w-3xl w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
-              <div className="p-4 border-b border-white/10">
-                <h3 className="text-lg font-bold text-white">Add a Widget</h3>
-              </div>
-              <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
-                {WIDGET_TYPES.map((wt) => (
-                  <button
-                    key={wt.type}
-                    onClick={() => addWidget(wt.type)}
-                    className="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-spades-gold/50 transition-colors text-left"
-                  >
-                    <div className="text-2xl mb-2">{wt.icon}</div>
-                    <div className="font-bold text-white text-sm">{wt.label}</div>
-                    <div className="text-white/40 text-xs">{wt.description}</div>
-                  </button>
-                ))}
-              </div>
+              {widgets.length === 0 && (
+                <div className="text-center py-8 text-white/30">
+                  <p className="text-sm">No widgets yet. Add some to customize your garage.</p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Widget Edit Modal */}
-        {editingWidget && (
-          <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setEditingWidget(null)}>
-            <div className="bg-spades-gray rounded-xl border border-white/10 max-w-2xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
-              <div className="sticky top-0 p-4 border-b border-white/10 bg-spades-gray flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{WIDGET_TYPES.find(w => w.type === editingWidget.type)?.icon}</span>
-                  <input
-                    type="text"
-                    value={editingWidget.title}
-                    onChange={(e) => {
-                      const newTitle = e.target.value;
-                      setEditingWidget({ ...editingWidget, title: newTitle });
-                      setWidgets(widgets.map(w => w.id === editingWidget.id ? { ...w, title: newTitle } : w));
-                    }}
-                    className="text-lg font-bold text-white bg-transparent border-b border-transparent hover:border-white/20 focus:border-spades-gold focus:outline-none"
-                  />
+        {/* Right Panel - Live Preview */}
+        <div className="w-1/2 overflow-y-auto bg-spades-black">
+          <div className="p-6">
+            <div className="mb-4 pb-4 border-b border-white/10">
+              <h3 className="text-sm font-bold text-white/60 uppercase tracking-wider">Live Preview</h3>
+            </div>
+            {/* Preview Container - matches actual garage page */}
+            <div className="space-y-4">
+              {/* Hero Section Preview */}
+              <div className="relative h-48 bg-gradient-to-br from-spades-gray to-black rounded-lg overflow-hidden">
+                {coverImage ? (
+                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/20">
+                    <SpadeIcon className="w-16 h-16" />
+                  </div>
+                )}
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black via-black/80 to-transparent">
+                  <h2 className="text-xl font-black text-white">
+                    {formData.year} {formData.make} {formData.model}
+                  </h2>
+                  <div className="flex items-center gap-2 text-white/60 text-sm mt-1">
+                    {formData.location && <span>{formData.location}</span>}
+                    {formData.power && <span className="text-spades-gold">{formData.power}</span>}
+                  </div>
                 </div>
-                <button onClick={() => setEditingWidget(null)} className="text-white/50 hover:text-white text-xl">✕</button>
               </div>
-              <div className="p-6">
-                {renderWidgetEditor(editingWidget, (id, data) => {
-                  const newWidget = { ...editingWidget, data };
-                  setEditingWidget(newWidget);
-                  setWidgets(widgets.map(w => w.id === id ? { ...w, data } : w));
+
+              {/* Description Preview */}
+              {formData.description && (
+                <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+                  <p className="text-white/70 text-sm whitespace-pre-wrap">{formData.description}</p>
+                </div>
+              )}
+
+              {/* Widgets Preview Grid */}
+              <div className="grid grid-cols-12 gap-3">
+                {widgets.map((widget) => {
+                  const sizeClasses = {
+                    small: "col-span-12 md:col-span-4",
+                    medium: "col-span-12 md:col-span-6",
+                    large: "col-span-12 md:col-span-8",
+                    full: "col-span-12",
+                  };
+                  const size = widget.size || "full";
+                  return (
+                    <div key={widget.id} className={sizeClasses[size]}>
+                      <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-semibold text-white">{widget.title}</h4>
+                          <span className="text-xs text-white/30">{SIZE_LABELS[size]?.label}</span>
+                        </div>
+                        <div className="text-white/40 text-xs">
+                          {WIDGET_TYPES.find(w => w.type === widget.type)?.description}
+                        </div>
+                        {widget.data.url && widget.type === "video" && (
+                          <div className="mt-2 text-xs text-spades-gold">Video configured</div>
+                        )}
+                        {widget.data.images && widget.data.images.length > 0 && (
+                          <div className="mt-2 text-xs text-spades-gold">
+                            {widget.data.images.length} photo{widget.data.images.length !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
                 })}
               </div>
-              <div className="sticky bottom-0 p-4 border-t border-white/10 bg-spades-gray flex justify-end gap-3">
-                <button
-                  onClick={() => setEditingWidget(null)}
-                  className="px-6 py-2 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors"
-                >
-                  Done
-                </button>
-              </div>
             </div>
           </div>
-        )}
-
-        {/* Save Button */}
-        <div className="flex justify-end gap-4">
-          <Link
-            href={`/garage/${username}`}
-            className="px-6 py-3 text-white/50 hover:text-white transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            onClick={handleSubmit}
-            disabled={saving || !formData.year || !formData.make || !formData.model}
-            className="px-8 py-3 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "💾 Save Changes"}
-          </button>
         </div>
       </div>
+
+      {/* Widget Picker Modal */}
+      {showWidgetPicker && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowWidgetPicker(false)}>
+          <div className="bg-spades-gray rounded-xl border border-white/10 max-w-3xl w-full max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="p-4 border-b border-white/10">
+              <h3 className="text-lg font-bold text-white">Add a Widget</h3>
+            </div>
+            <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+              {WIDGET_TYPES.map((wt) => (
+                <button
+                  key={wt.type}
+                  onClick={() => addWidget(wt.type)}
+                  className="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-spades-gold/50 transition-colors text-left"
+                >
+                  <div className="font-bold text-white text-sm mb-1">{wt.label}</div>
+                  <div className="text-white/40 text-xs">{wt.description}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Widget Edit Modal */}
+      {editingWidget && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setEditingWidget(null)}>
+          <div className="bg-spades-gray rounded-xl border border-white/10 max-w-2xl w-full max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="sticky top-0 p-4 border-b border-white/10 bg-spades-gray flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={editingWidget.title}
+                  onChange={(e) => {
+                    const newTitle = e.target.value;
+                    setEditingWidget({ ...editingWidget, title: newTitle });
+                    setWidgets(widgets.map(w => w.id === editingWidget.id ? { ...w, title: newTitle } : w));
+                  }}
+                  className="text-lg font-bold text-white bg-transparent border-b border-transparent hover:border-white/20 focus:border-spades-gold focus:outline-none"
+                />
+              </div>
+              <button onClick={() => setEditingWidget(null)} className="text-white/50 hover:text-white text-xl">×</button>
+            </div>
+            <div className="p-6">
+              {renderWidgetEditor(editingWidget, (id, data) => {
+                const newWidget = { ...editingWidget, data };
+                setEditingWidget(newWidget);
+                setWidgets(widgets.map(w => w.id === id ? { ...w, data } : w));
+              })}
+            </div>
+            <div className="sticky bottom-0 p-4 border-t border-white/10 bg-spades-gray flex justify-end gap-3">
+              <button
+                onClick={() => setEditingWidget(null)}
+                className="px-6 py-2 bg-spades-gold text-black font-bold rounded-lg hover:bg-spades-gold/90 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="fixed bottom-4 right-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 max-w-md z-50">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -812,23 +892,136 @@ function PhotosWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; up
 }
 
 function VideoWidgetEditor({ widget, updateWidget }: { widget: GarageWidget; updateWidget: (id: string, data: any) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
+  const [mode, setMode] = useState<"upload" | "url">(widget.data.url ? "url" : "upload");
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadProgress("Uploading video...");
+
+    try {
+      console.log("Starting video upload:", file.name, file.type, file.size);
+      const url = await uploadVideo(file);
+      console.log("Upload successful, URL:", url);
+      updateWidget(widget.id, { ...widget.data, url, type: "upload", fileName: file.name });
+      setUploadProgress("Upload complete!");
+      setTimeout(() => setUploadProgress(""), 2000);
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      setUploadProgress(`Error: ${error.message || "Upload failed"}`);
+      setTimeout(() => setUploadProgress(""), 5000); // Show error for 5 seconds
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
-    <div>
-      <input
-        type="text"
-        value={widget.data.url || ""}
-        onChange={(e) => updateWidget(widget.id, { ...widget.data, type: "url", url: e.target.value })}
-        placeholder="Paste YouTube, TikTok, or Google Drive link"
-        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
-      />
-      <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10 space-y-2">
-        <p className="text-white/60 text-xs">
-          ✅ <strong className="text-white/80">Supported:</strong> YouTube, TikTok, Google Drive, direct .mp4 links
-        </p>
-        <p className="text-white/50 text-xs">
-          💡 <strong className="text-white/70">Google Drive:</strong> Right-click video → Share → Copy link
-        </p>
+    <div className="space-y-4">
+      {/* Mode Toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setMode("upload")}
+          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+            mode === "upload"
+              ? "bg-spades-gold text-black"
+              : "bg-white/5 text-white/60 hover:bg-white/10"
+          }`}
+        >
+          Upload Video
+        </button>
+        <button
+          onClick={() => setMode("url")}
+          className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+            mode === "url"
+              ? "bg-spades-gold text-black"
+              : "bg-white/5 text-white/60 hover:bg-white/10"
+          }`}
+        >
+          Paste Link
+        </button>
       </div>
+
+      {mode === "upload" ? (
+        <div>
+          {/* Current video preview */}
+          {widget.data.url && widget.data.type === "upload" && (
+            <div className="mb-3 p-3 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">✓</span>
+                  <span className="text-white/70 text-sm truncate max-w-[200px]">
+                    {widget.data.fileName || "Video uploaded"}
+                  </span>
+                </div>
+                <button
+                  onClick={() => updateWidget(widget.id, { ...widget.data, url: "", fileName: "" })}
+                  className="text-red-400 hover:text-red-300 text-xs"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Upload input */}
+          <label className={`block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer transition-colors ${
+            uploading ? "border-spades-gold/50 bg-spades-gold/5" : "border-white/20 hover:border-white/40"
+          }`}>
+            <input
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+              onChange={handleVideoUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+            {uploading ? (
+              <div className="space-y-2">
+                <div className="text-spades-gold font-medium">{uploadProgress}</div>
+                {uploadProgress.includes("Error") && (
+                  <div className="text-red-400 text-xs mt-2 bg-red-500/10 p-2 rounded">
+                    {uploadProgress}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="text-white/70 text-sm">Click to upload video</div>
+                <div className="text-white/40 text-xs mt-1">MP4, WebM, MOV • Max 100MB</div>
+              </>
+            )}
+          </label>
+          {uploadProgress && uploadProgress.includes("Error") && (
+            <div className="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-red-400 text-xs">{uploadProgress}</p>
+            </div>
+          )}
+          <p className="text-white/30 text-xs mt-2">
+            Uploaded videos display at perfect quality with correct aspect ratio
+          </p>
+        </div>
+      ) : (
+        <div>
+          <input
+            type="text"
+            value={widget.data.url || ""}
+            onChange={(e) => updateWidget(widget.id, { ...widget.data, type: "url", url: e.target.value })}
+            placeholder="Paste YouTube, TikTok, or Instagram link"
+            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-spades-gold/50 focus:outline-none"
+          />
+          <div className="mt-3 p-3 bg-white/5 rounded-lg border border-white/10 space-y-2">
+            <p className="text-white/60 text-xs">
+              ✅ <strong className="text-white/80">Supported:</strong> YouTube, TikTok, Instagram Reels
+            </p>
+            <p className="text-white/40 text-xs">
+              💡 For best results, use the direct post/video URL
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

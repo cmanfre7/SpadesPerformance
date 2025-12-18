@@ -83,3 +83,46 @@ export async function uploadImages(files: File[], folder = "garage"): Promise<st
   return urls;
 }
 
+/**
+ * Upload a video file to Supabase Storage
+ * Returns the public URL of the uploaded video
+ * Max size: 100MB
+ */
+export async function uploadVideo(file: File, folder = "garage-videos"): Promise<string> {
+  // Check file size (100MB max)
+  const maxSize = 100 * 1024 * 1024; // 100MB
+  if (file.size > maxSize) {
+    throw new Error("Video file too large. Maximum size is 100MB.");
+  }
+
+  // Check file type (more lenient - accept by extension if MIME type is missing)
+  const validExtensions = /\.(mp4|webm|mov|m4v)$/i;
+  const validMimeTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
+  
+  if (!file.type || file.type === "application/octet-stream") {
+    // If MIME type is missing or generic, check by extension
+    if (!file.name.match(validExtensions)) {
+      throw new Error("Invalid video format. Please use MP4, WebM, or MOV.");
+    }
+  } else if (!validMimeTypes.includes(file.type) && !file.name.match(validExtensions)) {
+    throw new Error("Invalid video format. Please use MP4, WebM, or MOV.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("folder", folder);
+
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+  
+  if (!data.ok) {
+    throw new Error(data.error || "Video upload failed");
+  }
+
+  return data.url;
+}
+

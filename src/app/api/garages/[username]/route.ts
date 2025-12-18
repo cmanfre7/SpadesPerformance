@@ -130,5 +130,20 @@ export async function PATCH(
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, garage: data });
+  // Fetch profile_pic and rank from join_requests (same as GET handler)
+  let profile_pic: string | null = null;
+  let rank: string | null = null;
+  if (data.user_id) {
+    const { data: profile } = await supabase
+      .from("join_requests")
+      .select("profile_pic, rank")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    profile_pic = profile?.profile_pic || null;
+    rank = profile?.rank || null;
+  }
+
+  const shaped = { ...data, profile_pic, rank };
+
+  return NextResponse.json({ ok: true, garage: shaped });
 }

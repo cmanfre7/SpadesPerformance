@@ -243,7 +243,7 @@ export default function CreateGaragePage() {
       case "video": return { type: "url", url: "", videoData: "", fileName: "", fileType: "" };
       case "spotify": return { trackUrl: "" };
       case "stats": return { power: "", torque: "", zeroToSixty: "", quarterMile: "", topSpeed: "" };
-      case "mods": return { categories: [{ name: "Engine", items: [] }, { name: "Suspension", items: [] }, { name: "Exterior", items: [] }] };
+      case "mods": return { categories: [{ name: "Engine", items: [] }, { name: "Fuel system", items: [] }, { name: "Drivetrain", items: [] }, { name: "Suspension", items: [] }, { name: "Wheels and Tires", items: [] }, { name: "Exterior", items: [] }, { name: "Extras", items: [] }] };
       case "text": return { content: "" };
       case "rollrace": return { wins: 0, losses: 0, notable: [] };
       case "social": return { links: [] };
@@ -535,6 +535,7 @@ export default function CreateGaragePage() {
                       { key: "carbon", label: "Carbon" },
                       { key: "dark", label: "Dark" },
                       { key: "outline", label: "Outline" },
+                      { key: "transparent", label: "Clear" },
                     ].map((opt) => (
                       <button
                         key={opt.key}
